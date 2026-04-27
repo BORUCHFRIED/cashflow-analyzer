@@ -1,0 +1,200 @@
+'use client';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Account, Transaction } from '@/types';
+import { computeMetrics, exportToCSV } from '@/lib/utils';
+import MetricsCards from './MetricsCards';
+import TransactionTable from './TransactionTable';
+import CategoryChart from './CategoryChart';
+import AIAnalysisPanel from './AIAnalysisPanel';
+import UploadModal from './UploadModal';
+
+interface Props {
+  currency: string;
+  month: string;
+}
+
+export default function AccountView({ currency, month }: Props) {
+  const [account, setAccount] = useState<Account | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showUpload, setShowUpload] = useState(false);
+  const [classifying, setClassifying] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  const fetchAccount = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/accounts?currency=${currency}&month=${month}`);
+      if (!res.ok) throw new Error('שגיאה בטעינת נתונים');
+      const data = await res.json();
+      setAccount(data);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'שגיאה לא ידועה');
+    } finally {
+      setLoading(false);
+    }
+  }, [currency, month]);
+
+  useEffect(() => { fetchAccount(); }, [fetchAccount]);
+
+  async function handleUpdate(id: string, data: Partial<Transaction>) {
+    try {
+      const res = await fetch(`/api/transactions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return;
+      const updated: Transaction = await res.json();
+      setAccount(prev => prev ? {
+        ...prev,
+        transactions: prev.transactions.map(t => t.id === id ? updated : t),
+      } : prev);
+    } catch {
+      // silent
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('האם למחוק עסקה זו?')) return;
+    try {
+      await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+      setAccount(prev => prev ? {
+        ...prev,
+        transactions: prev.transactions.filter(t => t.id !== id),
+      } : prev);
+    } catch {
+      // silent
+    }
+  }
+
+  async function handleClassify() {
+    if (!account) return;
+    const uncategorized = account.transactions.filter(t => !t.category);
+    if (!uncategorized.length) return;
+    setClassifying(true);
+    try {
+      const res = await fetch('/api/classify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions: uncategorized }),
+      });
+      if (!res.ok) return;
+      const { results } = await res.json() as { results: Array<{ id: string; category: string }> };
+      setAccount(prev => {
+        if (!prev) return prev;
+        const map = Object.fromEntries(results.map(r => [r.id, r.category]));
+        return {
+          ...prev,
+          transactions: prev.transactions.map(t =>
+            map[t.id] ? { ...t, category: map[t.id] } : t
+          ),
+        };
+      });
+    } finally {
+      setClassifying(false);
+    }
+  }
+
+  async function handleExportPDF() {
+    const el = exportRef.current;
+    if (!el) return;
+    const { default: html2canvas } = await import('html2canvas');
+    const { default: jsPDF } = await import('jspdf');
+    const canvas = await html2canvas(el, { scale: 1.5, useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
+    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+    pdf.save(`cashflow_${currency}_${month}.pdf`);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-500">טוען נתונים...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-rose-50 border border-rose-200 rounded-xl p-6 text-center text-rose-700">
+        <p className="font-medium">שגיאה בטעינת נתונים</p>
+        <p className="text-sm mt-1">{error}</p>
+        <button onClick={fetchAccount} className="mt-3 px-4 py-1.5 bg-rose-600 text-white text-sm rounded-lg hover:bg-rose-700">
+          נסה שוב
+        </button>
+      </div>
+    );
+  }
+
+  const transactions = account?.transactions ?? [];
+  const metrics = computeMetrics(transactions);
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Action bar */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-lg font-semibold text-gray-700">
+          חשבון {currency} — {transactions.length} עסקאות
+        </h2>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setShowUpload(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors"
+          >
+            📤 העלאת עסקאות
+          </button>
+          <button
+            onClick={() => exportToCSV(transactions, currency, month)}
+            disabled={transactions.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors"
+          >
+            ⬇️ ייצוא CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={transactions.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors"
+          >
+            📄 ייצוא PDF
+          </button>
+        </div>
+      </div>
+
+      <div ref={exportRef} className="flex flex-col gap-5">
+        {/* Metrics */}
+        <MetricsCards metrics={metrics} currency={currency} />
+
+        {/* Charts + AI */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <CategoryChart transactions={transactions} currency={currency} />
+          <AIAnalysisPanel transactions={transactions} currency={currency} />
+        </div>
+
+        {/* Transaction table */}
+        <TransactionTable
+          transactions={transactions}
+          currency={currency}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+          onClassify={handleClassify}
+          classifying={classifying}
+        />
+      </div>
+
+      {showUpload && (
+        <UploadModal
+          currency={currency}
+          month={month}
+          onClose={() => setShowUpload(false)}
+          onSuccess={fetchAccount}
+        />
+      )}
+    </div>
+  );
+}
