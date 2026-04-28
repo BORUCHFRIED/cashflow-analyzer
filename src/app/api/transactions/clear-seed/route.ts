@@ -1,0 +1,75 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+const SEED_DESCRIPTIONS = [
+  // GBP
+  'Client payment - Acme Corp',
+  'Consulting service fee',
+  'Office rent - January',
+  'Office rent - February',
+  'Office rent - March',
+  'Staff salaries',
+  'AWS cloud services',
+  'Google Ads campaign',
+  'Office supplies',
+  'HMRC VAT payment',
+  'Client payment - Beta Ltd',
+  'Support contract renewal',
+  'GitHub Enterprise',
+  'LinkedIn Ads',
+  'Business insurance',
+  'Client payment - Gamma PLC',
+  'Freelance project delivery',
+  'Supplier materials',
+  'Datadog monitoring',
+  'Trade show sponsorship',
+  'Bank loan repayment',
+  // ILS
+  'לקוח ראשי - תשלום חודשי',
+  'שירות ייעוץ - פרויקט A',
+  'שכירות משרד - ינואר',
+  'שכר עובדים - ינואר',
+  'ספק חומרים - הזמנה #101',
+  'קמפיין פרסום דיגיטלי',
+  'מס הכנסה מקדמה',
+  'אחסון ענן - AWS',
+  'פרויקט מיוחד - לקוח B',
+  'שכירות משרד - פברואר',
+  'שכר עובדים - פברואר',
+  'ביטוח עסקי',
+  'ציוד משרדי',
+  'תוכנות ורישיונות',
+  'שירות ייעוץ - פרויקט C',
+  'הכנסה נוספת - לקוח חדש',
+  'שכירות משרד - מרץ',
+  'שכר עובדים - מרץ',
+  'ספק חומרים - הזמנה #115',
+  'פייסבוק ואינסטגרם - פרסום',
+  'הלוואה עסקית - החזר חודשי',
+  // USD
+  'Client payment - US Corp',
+  'SaaS subscription revenue',
+  'Staff salary - US team',
+  'AWS US region',
+  'Google Ads US',
+  'Stripe payment processing fees',
+  'IRS estimated tax payment',
+  'Client payment - TechStart Inc',
+  'Annual license renewal',
+  'Cloudflare & Vercel',
+  'HubSpot CRM',
+  'Legal & compliance fees',
+  'Client payment - Global Ventures',
+  'API usage fees income',
+  'Hardware & equipment',
+  'AWS + GCP services',
+  'Conference & events',
+  'Bank loan payment',
+];
+
+export async function POST() {
+  const { count } = await prisma.transaction.deleteMany({
+    where: { description: { in: SEED_DESCRIPTIONS } },
+  });
+  return NextResponse.json({ deleted: count });
+}
