@@ -9,6 +9,7 @@ import AIAnalysisPanel from './AIAnalysisPanel';
 import UploadModal from './UploadModal';
 import RulesPanel from './RulesPanel';
 import CategoriesManager from './CategoriesManager';
+import { useCategories } from '@/hooks/useCategories';
 
 interface Props {
   currency: string;
@@ -21,6 +22,7 @@ interface UndoState {
 }
 
 export default function AccountView({ currency, month }: Props) {
+  const { options: categoryOptions, custom: customCategories, addCategory, deleteCategory } = useCategories();
   const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -244,17 +246,24 @@ export default function AccountView({ currency, month }: Props) {
           <CategoryChart transactions={transactions} currency={currency} />
           <AIAnalysisPanel transactions={transactions} currency={currency} />
         </div>
-        <CategoriesManager />
+        <CategoriesManager
+          options={categoryOptions}
+          custom={customCategories}
+          addCategory={addCategory}
+          deleteCategory={deleteCategory}
+        />
         {account && (
           <RulesPanel
             accountId={account.id}
             month={month}
             onApplied={fetchAccount}
+            categoryOptions={categoryOptions}
           />
         )}
         <TransactionTable
           transactions={transactions}
           currency={currency}
+          categoryOptions={categoryOptions}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
           onDeleteMany={handleDeleteMany}

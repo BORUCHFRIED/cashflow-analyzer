@@ -1,16 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { CategoryRule } from '@/types';
-import { useCategories } from '@/hooks/useCategories';
+import { CategoryOption } from '@/hooks/useCategories';
 
 interface Props {
   accountId: string;
   month: string;
   onApplied: () => void;
+  categoryOptions: CategoryOption[];
 }
 
-export default function RulesPanel({ accountId, month, onApplied }: Props) {
-  const { options: categoryOptions } = useCategories();
+export default function RulesPanel({ accountId, month, onApplied, categoryOptions }: Props) {
   const [rules, setRules] = useState<CategoryRule[]>([]);
   const [keyword, setKeyword] = useState('');
   const [minAmount, setMinAmount] = useState('');

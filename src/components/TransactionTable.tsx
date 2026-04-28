@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Transaction } from '@/types';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { useCategories } from '@/hooks/useCategories';
+import { CategoryOption } from '@/hooks/useCategories';
 
 interface EditState {
   date: string;
@@ -15,6 +15,7 @@ interface EditState {
 interface Props {
   transactions: Transaction[];
   currency: string;
+  categoryOptions: CategoryOption[];
   onUpdate: (id: string, data: Partial<Transaction>) => void;
   onDelete: (id: string) => void;
   onDeleteMany: (ids: string[]) => void;
@@ -23,9 +24,8 @@ interface Props {
 }
 
 export default function TransactionTable({
-  transactions, currency, onUpdate, onDelete, onDeleteMany, onClassify, classifying,
+  transactions, currency, categoryOptions, onUpdate, onDelete, onDeleteMany, onClassify, classifying,
 }: Props) {
-  const { options: categoryOptions } = useCategories();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState>({ date: '', description: '', amount: '', category: '', notes: '' });
   const [selected, setSelected] = useState<Set<string>>(new Set());

@@ -1,10 +1,16 @@
 'use client';
 import { useState } from 'react';
-import { useCategories } from '@/hooks/useCategories';
+import { CategoryOption } from '@/hooks/useCategories';
 import { CATEGORY_LABELS } from '@/types';
 
-export default function CategoriesManager() {
-  const { options, custom, addCategory, deleteCategory } = useCategories();
+interface Props {
+  options: CategoryOption[];
+  custom: Array<{ id: string; name: string }>;
+  addCategory: (name: string) => Promise<{ ok: boolean; error?: string }>;
+  deleteCategory: (id: string) => void;
+}
+
+export default function CategoriesManager({ options, custom, addCategory, deleteCategory }: Props) {
   const [open, setOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
