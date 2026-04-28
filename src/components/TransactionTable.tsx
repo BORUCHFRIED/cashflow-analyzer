@@ -45,7 +45,7 @@ export default function TransactionTable({
 
   function handleDeleteSelected() {
     if (!confirm(`האם למחוק ${selected.size} עסקאות?`)) return;
-    onDeleteMany([...selected]);
+    onDeleteMany(Array.from(selected));
     setSelected(new Set());
   }
 
