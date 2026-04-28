@@ -12,8 +12,11 @@ export function middleware(request: NextRequest) {
   const secret = process.env.AUTH_SECRET;
 
   if (!secret || !token || token !== secret) {
-    const loginUrl = new URL('/login', request.url);
-    return NextResponse.redirect(loginUrl);
+    // API routes return JSON 401 — not an HTML redirect
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'לא מורשה' }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
