@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   // Collect ids to delete (all but the first in each group)
   const toDelete: string[] = [];
-  for (const ids of groups.values()) {
+  for (const ids of Array.from(groups.values())) {
     if (ids.length > 1) toDelete.push(...ids.slice(1));
   }
 
