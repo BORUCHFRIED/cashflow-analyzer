@@ -28,6 +28,13 @@ model Transaction {
   updatedAt   DateTime @updatedAt
 }
 
+model CategoryRule {
+  id        String   @id @default(cuid())
+  keyword   String   @unique
+  category  String
+  createdAt DateTime @default(now())
+}
+
 model ExchangeRate {
   id           String   @id @default(cuid())
   fromCurrency String

@@ -7,6 +7,7 @@ import TransactionTable from './TransactionTable';
 import CategoryChart from './CategoryChart';
 import AIAnalysisPanel from './AIAnalysisPanel';
 import UploadModal from './UploadModal';
+import RulesPanel from './RulesPanel';
 
 interface Props {
   currency: string;
@@ -226,6 +227,13 @@ export default function AccountView({ currency, month }: Props) {
           <CategoryChart transactions={transactions} currency={currency} />
           <AIAnalysisPanel transactions={transactions} currency={currency} />
         </div>
+        {account && (
+          <RulesPanel
+            accountId={account.id}
+            month={month}
+            onApplied={fetchAccount}
+          />
+        )}
         <TransactionTable
           transactions={transactions}
           currency={currency}
