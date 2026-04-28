@@ -23,6 +23,7 @@ model Transaction {
   description String
   amount      Float
   category    String   @default("")
+  notes       String   @default("")
   month       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -30,7 +31,9 @@ model Transaction {
 
 model CategoryRule {
   id        String   @id @default(cuid())
-  keyword   String   @unique
+  keyword   String   @default("")
+  minAmount Float?
+  maxAmount Float?
   category  String
   createdAt DateTime @default(now())
 }

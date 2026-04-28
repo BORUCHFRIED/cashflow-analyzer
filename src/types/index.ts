@@ -46,7 +46,16 @@ export interface Transaction {
   description: string;
   amount: number;
   category: string;
+  notes: string;
   month: string;
+}
+
+export interface CategoryRule {
+  id: string;
+  keyword: string;
+  minAmount: number | null;
+  maxAmount: number | null;
+  category: string;
 }
 
 export interface Account {

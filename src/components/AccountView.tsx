@@ -152,6 +152,15 @@ export default function AccountView({ currency, month }: Props) {
     }
   }
 
+  async function handleClearMonth() {
+    if (!account) return;
+    if (!confirm(`האם למחוק את כל ${transactions.length} העסקאות של חודש זה? פעולה זו אינה הפיכה.`)) return;
+    try {
+      await fetch(`/api/transactions/clear?accountId=${account.id}&month=${month}`, { method: 'DELETE' });
+      fetchAccount();
+    } catch { /* silent */ }
+  }
+
   async function handleExportPDF() {
     const el = exportRef.current;
     if (!el) return;
@@ -210,6 +219,13 @@ export default function AccountView({ currency, month }: Props) {
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors"
           >
             ⬇️ ייצוא CSV
+          </button>
+          <button
+            onClick={handleClearMonth}
+            disabled={transactions.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-rose-200 text-rose-600 text-sm font-medium rounded-xl hover:bg-rose-50 disabled:opacity-40 transition-colors"
+          >
+            🗑️ נקה חודש
           </button>
           <button
             onClick={handleExportPDF}

@@ -5,12 +5,9 @@ export async function POST(req: NextRequest) {
   try {
     const { accountId, month } = await req.json();
 
-    // Load all rules and uncategorized transactions
     const [rules, transactions] = await Promise.all([
       prisma.categoryRule.findMany({ orderBy: { createdAt: 'asc' } }),
-      prisma.transaction.findMany({
-        where: { accountId, month, category: '' },
-      }),
+      prisma.transaction.findMany({ where: { accountId, month, category: '' } }),
     ]);
 
     if (!rules.length || !transactions.length) {
@@ -22,7 +19,15 @@ export async function POST(req: NextRequest) {
 
     for (const tx of transactions) {
       const desc = tx.description.toLowerCase();
-      const matchedRule = rules.find(r => desc.includes(r.keyword));
+      const absAmount = Math.abs(tx.amount);
+
+      const matchedRule = rules.find(r => {
+        const keywordOk = !r.keyword || desc.includes(r.keyword);
+        const minOk = r.minAmount == null || absAmount >= r.minAmount;
+        const maxOk = r.maxAmount == null || absAmount <= r.maxAmount;
+        return keywordOk && minOk && maxOk;
+      });
+
       if (matchedRule) {
         updates.push(
           prisma.transaction.update({

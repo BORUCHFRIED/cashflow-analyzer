@@ -13,15 +13,24 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { keyword, category } = await req.json();
-    if (!keyword?.trim() || !category) {
-      return NextResponse.json({ error: 'מילת מפתח וקטגוריה נדרשות' }, { status: 400 });
+    const { keyword, minAmount, maxAmount, category } = await req.json();
+
+    if (!category) {
+      return NextResponse.json({ error: 'קטגוריה נדרשת' }, { status: 400 });
     }
-    const rule = await prisma.categoryRule.upsert({
-      where: { keyword: keyword.trim().toLowerCase() },
-      update: { category },
-      create: { keyword: keyword.trim().toLowerCase(), category },
+    if (!keyword?.trim() && minAmount == null && maxAmount == null) {
+      return NextResponse.json({ error: 'נדרשת לפחות מילת מפתח או טווח סכום' }, { status: 400 });
+    }
+
+    const rule = await prisma.categoryRule.create({
+      data: {
+        keyword: keyword?.trim().toLowerCase() ?? '',
+        minAmount: minAmount != null ? Number(minAmount) : null,
+        maxAmount: maxAmount != null ? Number(maxAmount) : null,
+        category,
+      },
     });
+
     return NextResponse.json(rule);
   } catch (err) {
     console.error(err);
