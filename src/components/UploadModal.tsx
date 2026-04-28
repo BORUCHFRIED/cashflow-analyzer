@@ -15,24 +15,40 @@ interface Props {
   onSuccess: () => void;
 }
 
+type AmountMode = 'auto' | 'all-expenses' | 'all-income' | 'flip';
+
 export default function UploadModal({ currency, month, onClose, onSuccess }: Props) {
   const [tab, setTab] = useState<'file' | 'paste'>('paste');
   const [pasteText, setPasteText] = useState('');
-  const [preview, setPreview] = useState<ParsedRow[]>([]);
+  const [rawPreview, setRawPreview] = useState<ParsedRow[]>([]);
+  const [amountMode, setAmountMode] = useState<AmountMode>('auto');
   const [parseError, setParseError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function handleParse() {
+  function applyMode(rows: ParsedRow[], mode: AmountMode): ParsedRow[] {
+    return rows.map(r => {
+      switch (mode) {
+        case 'all-expenses': return { ...r, amount: -Math.abs(r.amount) };
+        case 'all-income':   return { ...r, amount:  Math.abs(r.amount) };
+        case 'flip':         return { ...r, amount: -r.amount };
+        default:             return r;
+      }
+    });
+  }
+
+  const preview = applyMode(rawPreview, amountMode);
+
+  function parseText(text: string) {
     setParseError('');
     try {
-      const rows = parseCSV(pasteText);
+      const rows = parseCSV(text);
       if (rows.length === 0) {
         setParseError('לא זוהו שורות תקינות. פורמט: תאריך, תיאור, סכום');
         return;
       }
-      setPreview(rows);
+      setRawPreview(rows);
     } catch {
       setParseError('שגיאה בניתוח הנתונים');
     }
@@ -45,17 +61,7 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
     reader.onload = ev => {
       const text = ev.target?.result as string;
       setPasteText(text);
-      try {
-        const rows = parseCSV(text);
-        if (rows.length === 0) {
-          setParseError('לא זוהו שורות תקינות בקובץ');
-        } else {
-          setPreview(rows);
-          setParseError('');
-        }
-      } catch {
-        setParseError('שגיאה בקריאת הקובץ');
-      }
+      parseText(text);
     };
     reader.readAsText(file, 'UTF-8');
   }
@@ -84,6 +90,13 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
     }
   }
 
+  const MODES: { key: AmountMode; label: string; desc: string }[] = [
+    { key: 'auto',         label: 'אוטומטי',       desc: 'שמור סכומים כפי שהם (+ הכנסה, - הוצאה)' },
+    { key: 'all-expenses', label: 'כולן הוצאות',    desc: 'כל הסכומים הן הוצאות (יהפכו לשליליים)' },
+    { key: 'all-income',   label: 'כולן הכנסות',    desc: 'כל הסכומים הן הכנסות (יהפכו לחיוביים)' },
+    { key: 'flip',         label: 'הפוך סימנים',    desc: 'הפוך + ל- ו- ל+' },
+  ];
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
@@ -103,7 +116,7 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
             {(['paste', 'file'] as const).map(t => (
               <button
                 key={t}
-                onClick={() => { setTab(t); setPreview([]); setParseError(''); }}
+                onClick={() => { setTab(t); setRawPreview([]); setParseError(''); }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
                   ${tab === t ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
@@ -114,22 +127,22 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
 
           {/* Format hint */}
           <div className="bg-blue-50 rounded-lg p-3 text-xs text-blue-700">
-            <strong>פורמט נדרש:</strong> תאריך, תיאור, סכום (חיובי = הכנסה, שלילי = הוצאה)<br />
-            <span className="text-blue-500 dir-ltr font-mono">01/03/2026, Office rent, -2100</span><br />
-            <span className="text-blue-500 dir-ltr font-mono">05/03/2026, Client payment, 8500</span>
+            <strong>פורמט:</strong> תאריך, תיאור, סכום — מופרד בפסיקים<br />
+            <span className="font-mono text-blue-500">01/03/2026, שכירות, 2100</span><br />
+            <span className="font-mono text-blue-500">05/03/2026, תשלום לקוח, 8500</span>
           </div>
 
           {tab === 'paste' ? (
             <div className="flex flex-col gap-2">
               <textarea
                 value={pasteText}
-                onChange={e => { setPasteText(e.target.value); setPreview([]); }}
+                onChange={e => { setPasteText(e.target.value); setRawPreview([]); }}
                 placeholder="הדבק נתוני בנק כאן..."
                 className="border border-gray-300 rounded-xl p-3 text-sm font-mono h-40 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 dir="ltr"
               />
               <button
-                onClick={handleParse}
+                onClick={() => parseText(pasteText)}
                 disabled={!pasteText.trim()}
                 className="self-start px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 disabled:opacity-40"
               >
@@ -152,6 +165,32 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
             <div className="bg-rose-50 text-rose-600 text-sm rounded-lg p-3">{parseError}</div>
           )}
 
+          {/* Amount mode selector — shown once we have parsed rows */}
+          {rawPreview.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col gap-3">
+              <p className="text-sm font-semibold text-amber-800">סוג הסכומים בקובץ:</p>
+              <div className="grid grid-cols-2 gap-2">
+                {MODES.map(m => (
+                  <button
+                    key={m.key}
+                    onClick={() => setAmountMode(m.key)}
+                    className={`text-right px-3 py-2 rounded-lg border text-xs transition-colors
+                      ${amountMode === m.key
+                        ? 'bg-amber-500 border-amber-500 text-white'
+                        : 'bg-white border-amber-200 text-amber-800 hover:bg-amber-100'
+                      }`}
+                  >
+                    <div className="font-semibold">{m.label}</div>
+                    <div className={`mt-0.5 ${amountMode === m.key ? 'text-amber-100' : 'text-amber-600'}`}>
+                      {m.desc}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Preview */}
           {preview.length > 0 && (
             <div>
               <h4 className="text-sm font-semibold text-gray-700 mb-2">
