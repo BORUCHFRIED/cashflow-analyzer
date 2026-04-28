@@ -13,12 +13,19 @@ interface Props {
   month: string;
 }
 
+interface UndoState {
+  transactions: Transaction[];
+  label: string;
+}
+
 export default function AccountView({ currency, month }: Props) {
   const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showUpload, setShowUpload] = useState(false);
   const [classifying, setClassifying] = useState(false);
+  const [undoState, setUndoState] = useState<UndoState | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
   const fetchAccount = useCallback(async () => {
@@ -38,6 +45,14 @@ export default function AccountView({ currency, month }: Props) {
 
   useEffect(() => { fetchAccount(); }, [fetchAccount]);
 
+  // Clear undo timer on unmount
+  useEffect(() => () => { if (undoTimer.current) clearTimeout(undoTimer.current); }, []);
+
+  function scheduleUndoClear() {
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    undoTimer.current = setTimeout(() => setUndoState(null), 6000);
+  }
+
   async function handleUpdate(id: string, data: Partial<Transaction>) {
     try {
       const res = await fetch(`/api/transactions/${id}`, {
@@ -51,22 +66,61 @@ export default function AccountView({ currency, month }: Props) {
         ...prev,
         transactions: prev.transactions.map(t => t.id === id ? updated : t),
       } : prev);
-    } catch {
-      // silent
-    }
+    } catch { /* silent */ }
   }
 
   async function handleDelete(id: string) {
     if (!confirm('האם למחוק עסקה זו?')) return;
+    const removed = account?.transactions.find(t => t.id === id);
     try {
       await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
       setAccount(prev => prev ? {
         ...prev,
         transactions: prev.transactions.filter(t => t.id !== id),
       } : prev);
-    } catch {
-      // silent
-    }
+      if (removed) {
+        setUndoState({ transactions: [removed], label: 'נמחקה עסקה אחת' });
+        scheduleUndoClear();
+      }
+    } catch { /* silent */ }
+  }
+
+  async function handleDeleteMany(ids: string[]) {
+    const removed = account?.transactions.filter(t => ids.includes(t.id)) ?? [];
+    try {
+      await Promise.all(ids.map(id => fetch(`/api/transactions/${id}`, { method: 'DELETE' })));
+      setAccount(prev => prev ? {
+        ...prev,
+        transactions: prev.transactions.filter(t => !ids.includes(t.id)),
+      } : prev);
+      if (removed.length) {
+        setUndoState({ transactions: removed, label: `נמחקו ${removed.length} עסקאות` });
+        scheduleUndoClear();
+      }
+    } catch { /* silent */ }
+  }
+
+  async function handleUndo() {
+    if (!undoState || !account) return;
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    try {
+      await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currency,
+          month,
+          transactions: undoState.transactions.map(t => ({
+            date: t.date,
+            description: t.description,
+            amount: t.amount,
+            category: t.category,
+          })),
+        }),
+      });
+      setUndoState(null);
+      fetchAccount();
+    } catch { /* silent */ }
   }
 
   async function handleClassify() {
@@ -167,21 +221,17 @@ export default function AccountView({ currency, month }: Props) {
       </div>
 
       <div ref={exportRef} className="flex flex-col gap-5">
-        {/* Metrics */}
         <MetricsCards metrics={metrics} currency={currency} />
-
-        {/* Charts + AI */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <CategoryChart transactions={transactions} currency={currency} />
           <AIAnalysisPanel transactions={transactions} currency={currency} />
         </div>
-
-        {/* Transaction table */}
         <TransactionTable
           transactions={transactions}
           currency={currency}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
+          onDeleteMany={handleDeleteMany}
           onClassify={handleClassify}
           classifying={classifying}
         />
@@ -194,6 +244,25 @@ export default function AccountView({ currency, month }: Props) {
           onClose={() => setShowUpload(false)}
           onSuccess={fetchAccount}
         />
+      )}
+
+      {/* Undo toast */}
+      {undoState && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl text-sm animate-fade-in">
+          <span>{undoState.label}</span>
+          <button
+            onClick={handleUndo}
+            className="font-bold text-indigo-300 hover:text-indigo-100 underline underline-offset-2"
+          >
+            ביטול מחיקה ↩
+          </button>
+          <button
+            onClick={() => { setUndoState(null); if (undoTimer.current) clearTimeout(undoTimer.current); }}
+            className="text-gray-400 hover:text-white text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
       )}
     </div>
   );

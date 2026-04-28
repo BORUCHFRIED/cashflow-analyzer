@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { currency, transactions, month } = body as {
       currency: string;
-      transactions: Array<{ date: string; description: string; amount: number }>;
+      transactions: Array<{ date: string; description: string; amount: number; category?: string }>;
       month: string;
     };
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
             date: new Date(t.date),
             description: t.description,
             amount: t.amount,
-            category: '',
+            category: t.category ?? '',
             month,
           },
         })
