@@ -8,6 +8,7 @@ import CategoryChart from './CategoryChart';
 import AIAnalysisPanel from './AIAnalysisPanel';
 import UploadModal from './UploadModal';
 import RulesPanel from './RulesPanel';
+import CategoriesManager from './CategoriesManager';
 
 interface Props {
   currency: string;
@@ -243,6 +244,7 @@ export default function AccountView({ currency, month }: Props) {
           <CategoryChart transactions={transactions} currency={currency} />
           <AIAnalysisPanel transactions={transactions} currency={currency} />
         </div>
+        <CategoriesManager />
         {account && (
           <RulesPanel
             accountId={account.id}

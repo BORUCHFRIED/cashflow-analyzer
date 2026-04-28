@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
-import { Transaction, CATEGORIES, CATEGORY_LABELS } from '@/types';
+import { Transaction } from '@/types';
 import { formatDate, formatCurrency } from '@/lib/utils';
+import { useCategories } from '@/hooks/useCategories';
 
 interface EditState {
   date: string;
@@ -24,6 +25,7 @@ interface Props {
 export default function TransactionTable({
   transactions, currency, onUpdate, onDelete, onDeleteMany, onClassify, classifying,
 }: Props) {
+  const { options: categoryOptions } = useCategories();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState>({ date: '', description: '', amount: '', category: '', notes: '' });
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -167,7 +169,7 @@ export default function TransactionTable({
                           onChange={e => setEditState(s => ({ ...s, category: e.target.value }))}
                           className="border border-gray-300 rounded-md px-2 py-1 text-xs">
                           <option value="">ללא קטגוריה</option>
-                          {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+                          {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                       </td>
                       <td className="px-4 py-2">
@@ -197,7 +199,7 @@ export default function TransactionTable({
                       </td>
                       <td className="px-4 py-2.5">
                         {t.category
-                          ? <span className="inline-block bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full">{CATEGORY_LABELS[t.category] ?? t.category}</span>
+                          ? <span className="inline-block bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full">{categoryOptions.find(o => o.value === t.category)?.label ?? t.category}</span>
                           : <span className="inline-block bg-amber-50 text-amber-600 text-xs px-2 py-0.5 rounded-full">לא מסווג</span>}
                       </td>
                       <td className="px-4 py-2.5">

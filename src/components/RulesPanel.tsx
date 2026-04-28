@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CATEGORIES, CATEGORY_LABELS, CategoryRule } from '@/types';
+import { CategoryRule } from '@/types';
+import { useCategories } from '@/hooks/useCategories';
 
 interface Props {
   accountId: string;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function RulesPanel({ accountId, month, onApplied }: Props) {
+  const { options: categoryOptions } = useCategories();
   const [rules, setRules] = useState<CategoryRule[]>([]);
   const [keyword, setKeyword] = useState('');
   const [minAmount, setMinAmount] = useState('');
@@ -134,7 +136,7 @@ export default function RulesPanel({ accountId, month, onApplied }: Props) {
                 className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
               >
                 <option value="">בחר קטגוריה</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+                {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
               <div className="flex gap-2 items-center">
                 <span className="text-xs text-gray-500 whitespace-nowrap">סכום מ:</span>
@@ -184,7 +186,7 @@ export default function RulesPanel({ accountId, month, onApplied }: Props) {
                     </span>
                     <span className="text-gray-400 text-xs">→</span>
                     <span className="text-xs text-indigo-600">
-                      {CATEGORY_LABELS[rule.category] ?? rule.category}
+                      {categoryOptions.find(o => o.value === rule.category)?.label ?? rule.category}
                     </span>
                     <button onClick={() => deleteRule(rule.id)}
                       className="text-gray-400 hover:text-rose-500 transition-colors text-sm leading-none" title="מחק כלל">
