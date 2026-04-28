@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CURRENCY_SYMBOLS } from '@/types';
 import { currentMonth, monthLabel } from '@/lib/utils';
 import MonthSelector from './MonthSelector';
@@ -18,6 +19,13 @@ const TABS: { key: Tab; label: string }[] = [
 export default function Dashboard() {
   const [month, setMonth] = useState(currentMonth);
   const [tab, setTab] = useState<Tab>('ILS');
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -31,7 +39,16 @@ export default function Dashboard() {
               </h1>
               <p className="text-xs text-gray-500 mt-0.5">ניהול פיננסי רב-מטבעי</p>
             </div>
-            <MonthSelector month={month} onChange={setMonth} />
+            <div className="flex items-center gap-3">
+              <MonthSelector month={month} onChange={setMonth} />
+              <button
+                onClick={handleLogout}
+                className="px-3 py-2 text-sm text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                title="התנתק"
+              >
+                🚪 יציאה
+              </button>
+            </div>
           </div>
         </div>
       </header>
