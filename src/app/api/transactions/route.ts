@@ -4,13 +4,13 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { currency, transactions, month } = body as {
+    const { currency, transactions } = body as {
       currency: string;
       transactions: Array<{ date: string; description: string; amount: number; category?: string }>;
-      month: string;
+      month?: string; // ignored — each transaction's month is derived from its own date
     };
 
-    if (!currency || !transactions?.length || !month) {
+    if (!currency || !transactions?.length) {
       return NextResponse.json({ error: 'נתונים חסרים' }, { status: 400 });
     }
 
@@ -21,18 +21,20 @@ export async function POST(req: NextRequest) {
     }
 
     const created = await prisma.$transaction(
-      transactions.map(t =>
-        prisma.transaction.create({
+      transactions.map(t => {
+        const d = new Date(t.date);
+        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        return prisma.transaction.create({
           data: {
             accountId: account!.id,
-            date: new Date(t.date),
+            date: d,
             description: t.description,
             amount: t.amount,
             category: t.category ?? '',
             month,
           },
-        })
-      )
+        });
+      })
     );
 
     return NextResponse.json({
