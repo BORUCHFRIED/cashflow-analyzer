@@ -4,19 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { CATEGORIES } from '@/types';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const BATCH_SIZE = 40;
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { transactions } = body as {
-      transactions: Array<{ id: string; description: string; amount: number }>;
-    };
-
-    if (!transactions?.length) {
-      return NextResponse.json({ error: 'אין עסקאות לסיווג' }, { status: 400 });
-    }
-
-    const prompt = `You are a financial transaction categorizer. Classify each transaction into exactly one of these categories:
+async function classifyBatch(
+  transactions: Array<{ id: string; description: string; amount: number }>
+): Promise<Array<{ id: string; category: string }>> {
+  const prompt = `You are a financial transaction categorizer. Classify each transaction into exactly one of these categories:
 ${CATEGORIES.join(', ')}
 
 Rules:
@@ -37,23 +30,39 @@ ${transactions.map((t, i) => `${i + 1}. ID:${t.id} | "${t.description}" | Amount
 Respond with a JSON array only, no explanation:
 [{"id": "...", "category": "..."}, ...]`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-    });
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 2048,
+    messages: [{ role: 'user', content: prompt }],
+  });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      return NextResponse.json({ error: 'תגובת AI לא תקינה' }, { status: 500 });
+  const text = response.content[0].type === 'text' ? response.content[0].text : '';
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) return [];
+  return JSON.parse(jsonMatch[0]);
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { transactions } = await req.json() as {
+      transactions: Array<{ id: string; description: string; amount: number }>;
+    };
+
+    if (!transactions?.length) {
+      return NextResponse.json({ error: 'אין עסקאות לסיווג' }, { status: 400 });
     }
 
-    const results: Array<{ id: string; category: string }> = JSON.parse(jsonMatch[0]);
+    // Process in batches
+    const allResults: Array<{ id: string; category: string }> = [];
+    for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
+      const batch = transactions.slice(i, i + BATCH_SIZE);
+      const results = await classifyBatch(batch);
+      allResults.push(...results);
+    }
 
     // Update in database
     await prisma.$transaction(
-      results.map(r =>
+      allResults.map(r =>
         prisma.transaction.update({
           where: { id: r.id },
           data: { category: r.category },
@@ -61,7 +70,7 @@ Respond with a JSON array only, no explanation:
       )
     );
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ results: allResults });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'שגיאה בסיווג אוטומטי' }, { status: 500 });
