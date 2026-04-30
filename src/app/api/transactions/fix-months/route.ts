@@ -8,7 +8,7 @@ export async function POST() {
     let fixed = 0;
     for (const t of all) {
       const d = new Date(t.date);
-      const correctMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const correctMonth = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
       if (t.month !== correctMonth) {
         await prisma.transaction.update({ where: { id: t.id }, data: { month: correctMonth } });
         fixed++;

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const created = await prisma.$transaction(
       transactions.map(t => {
         const d = new Date(t.date);
-        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
         return prisma.transaction.create({
           data: {
             accountId: account!.id,

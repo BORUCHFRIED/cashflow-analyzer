@@ -21,7 +21,7 @@ export function formatCurrency(amount: number, currency: string): string {
 
 export function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  return `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
 }
 
 export function parseDate(str: string): Date | null {
@@ -41,7 +41,7 @@ export function parseDate(str: string): Date | null {
     if (y < 100) y += 2000;
   }
 
-  const date = new Date(y, m - 1, da);
+  const date = new Date(Date.UTC(y, m - 1, da, 12, 0, 0));
   return isNaN(date.getTime()) ? null : date;
 }
 
