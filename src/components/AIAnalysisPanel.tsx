@@ -26,6 +26,23 @@ export default function AIAnalysisPanel({ transactions, currency }: Props) {
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  function printConversation() {
+    const html = messages.map(m => `
+      <div style="margin-bottom:16px; text-align:${m.role === 'user' ? 'right' : 'left'}">
+        <strong style="font-size:11px; color:#6366f1">${m.role === 'user' ? 'שאלה' : 'AI'}</strong>
+        <div style="margin-top:4px; white-space:pre-wrap; font-size:13px; line-height:1.6">${m.content}</div>
+      </div>
+    `).join('<hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0"/>');
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.documentElement.innerHTML = `
+      <html dir="rtl"><head><title>דוח AI פיננסי</title>
+      <style>body{font-family:Arial,sans-serif;padding:32px;direction:rtl;color:#111}@media print{body{padding:16px}}</style>
+      </head><body><h2 style="margin-bottom:24px">דוח ניתוח AI פיננסי</h2>${html}</body></html>
+    `;
+    win.print();
+  }
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -97,10 +114,16 @@ export default function AIAnalysisPanel({ transactions, currency }: Props) {
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-400">Claude</span>
           {messages.length > 0 && (
-            <button onClick={() => setMessages([])}
-              className="text-xs text-gray-400 hover:text-rose-500 transition-colors px-1">
-              נקה
-            </button>
+            <>
+              <button onClick={printConversation}
+                className="text-xs text-gray-400 hover:text-indigo-600 transition-colors px-1">
+                🖨️ הדפס
+              </button>
+              <button onClick={() => setMessages([])}
+                className="text-xs text-gray-400 hover:text-rose-500 transition-colors px-1">
+                נקה
+              </button>
+            </>
           )}
         </div>
       </div>

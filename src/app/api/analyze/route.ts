@@ -49,7 +49,7 @@ ${txList}`;
         try {
           const anthropicStream = await anthropic.messages.create({
             model: 'claude-sonnet-4-6',
-            max_tokens: 2048,
+            max_tokens: 8192,
             system: systemPrompt,
             messages: messages,
             stream: true,
