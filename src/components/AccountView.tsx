@@ -244,7 +244,7 @@ export default function AccountView({ currency, month }: Props) {
         <MetricsCards metrics={metrics} currency={currency} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <CategoryChart transactions={transactions} currency={currency} />
-          <AIAnalysisPanel transactions={transactions} currency={currency} />
+          <AIAnalysisPanel currency={currency} month={month} />
         </div>
         <CategoriesManager
           options={categoryOptions}

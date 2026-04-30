@@ -1,6 +1,5 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { Transaction } from '@/types';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -8,8 +7,8 @@ interface Message {
 }
 
 interface Props {
-  transactions: Transaction[];
   currency: string;
+  month: string;
 }
 
 const SUGGESTIONS = [
@@ -20,7 +19,7 @@ const SUGGESTIONS = [
   'נתח את הרווחיות שלי',
 ];
 
-export default function AIAnalysisPanel({ transactions, currency }: Props) {
+export default function AIAnalysisPanel({ currency, month }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -64,7 +63,7 @@ export default function AIAnalysisPanel({ transactions, currency }: Props) {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions, currency, messages: newMessages }),
+        body: JSON.stringify({ currency, month, messages: newMessages }),
       });
 
       if (!res.ok || !res.body) {

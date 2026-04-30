@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, Legend,
 } from 'recharts';
 import { Account, ExchangeRate, Transaction, CURRENCY_SYMBOLS } from '@/types';
-import { computeMetrics, formatCurrency } from '@/lib/utils';
+import { computeMetrics, formatCurrency, currentMonth } from '@/lib/utils';
 import AIAnalysisPanel from './AIAnalysisPanel';
 
 interface Props { month: string }
@@ -268,10 +268,7 @@ export default function ConsolidatedView({ month }: Props) {
       </div>
 
       {/* AI analysis */}
-      <AIAnalysisPanel
-        transactions={allTransactions}
-        currency="ILS"
-      />
+      <AIAnalysisPanel currency="ILS" month={currentMonth()} />
     </div>
   );
 }
