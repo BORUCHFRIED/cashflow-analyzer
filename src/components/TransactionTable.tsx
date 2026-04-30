@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Transaction } from '@/types';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { CategoryOption } from '@/hooks/useCategories';
@@ -11,6 +11,8 @@ interface EditState {
   category: string;
   notes: string;
 }
+
+type SortField = 'date' | 'amount' | 'category';
 
 interface Props {
   transactions: Transaction[];
@@ -31,16 +33,54 @@ export default function TransactionTable({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
   const [quickNoteText, setQuickNoteText] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const visible = useMemo(() => {
+    let list = [...transactions];
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(t =>
+        t.description.toLowerCase().includes(q) ||
+        (t.notes ?? '').toLowerCase().includes(q)
+      );
+    }
+    if (filterCategory) {
+      list = filterCategory === '__none__'
+        ? list.filter(t => !t.category)
+        : list.filter(t => t.category === filterCategory);
+    }
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sortField === 'date') cmp = a.date.localeCompare(b.date);
+      else if (sortField === 'amount') cmp = a.amount - b.amount;
+      else if (sortField === 'category') cmp = (a.category ?? '').localeCompare(b.category ?? '');
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  }, [transactions, search, filterCategory, sortField, sortDir]);
+
+  function toggleSort(field: SortField) {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  }
+
+  function sortIcon(field: SortField) {
+    if (sortField !== field) return <span className="text-gray-300 ms-1">↕</span>;
+    return <span className="text-indigo-500 ms-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  }
 
   const uncategorized = transactions.filter(t => !t.category).length;
-  const allSelected = transactions.length > 0 && selected.size === transactions.length;
+  const allSelected = visible.length > 0 && visible.every(t => selected.has(t.id));
   const someSelected = selected.size > 0;
 
   function toggleOne(id: string) {
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
   function toggleAll() {
-    setSelected(allSelected ? new Set() : new Set(transactions.map(t => t.id)));
+    setSelected(allSelected ? new Set() : new Set(visible.map(t => t.id)));
   }
   function handleDeleteSelected() {
     if (!confirm(`האם למחוק ${selected.size} עסקאות?`)) return;
@@ -87,31 +127,62 @@ export default function TransactionTable({
   if (transactions.length === 0) {
     return (
       <div className="card p-8 text-center text-gray-400 text-sm">
-        אין עסקאות לחוד�� זה. העלה קובץ CSV או הדבק נתוני בנק.
+        אין עסקאות לחודש זה. העלה קובץ CSV או הדבק נתוני בנק.
       </div>
     );
   }
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-gray-700">עסקאות ({transactions.length})</h3>
-          {someSelected && <span className="text-xs text-indigo-600 font-medium">{selected.size} נבחרו</span>}
+      {/* Toolbar */}
+      <div className="px-5 py-3 border-b border-gray-100 flex flex-col gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-semibold text-gray-700">
+              עסקאות ({visible.length}{visible.length !== transactions.length ? ` מתוך ${transactions.length}` : ''})
+            </h3>
+            {someSelected && <span className="text-xs text-indigo-600 font-medium">{selected.size} נבחרו</span>}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {someSelected && (
+              <button onClick={handleDeleteSelected}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white text-xs font-medium rounded-lg hover:bg-rose-700 transition-colors">
+                🗑️ מחק נבחרים ({selected.size})
+              </button>
+            )}
+            {uncategorized > 0 && (
+              <button onClick={onClassify} disabled={classifying}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                {classifying
+                  ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />מסווג...</>
+                  : <>✨ סיווג אוטומטי ({uncategorized})</>}
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {someSelected && (
-            <button onClick={handleDeleteSelected}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white text-xs font-medium rounded-lg hover:bg-rose-700 transition-colors">
-              🗑️ מחק נבחרים ({selected.size})
-            </button>
-          )}
-          {uncategorized > 0 && (
-            <button onClick={onClassify} disabled={classifying}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              {classifying
-                ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />מסווג...</>
-                : <>✨ סיווג אוטומטי ({uncategorized})</>}
+
+        {/* Search + filter row */}
+        <div className="flex gap-2 flex-wrap">
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="🔍 חיפוש לפי תיאור או הערה..."
+            dir="auto"
+            className="flex-1 min-w-[180px] border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
+          <select
+            value={filterCategory}
+            onChange={e => setFilterCategory(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          >
+            <option value="">כל הקטגוריות</option>
+            <option value="__none__">ללא קטגוריה</option>
+            {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          {(search || filterCategory) && (
+            <button onClick={() => { setSearch(''); setFilterCategory(''); }}
+              className="text-xs text-gray-400 hover:text-rose-500 px-2 transition-colors">
+              ✕ נקה
             </button>
           )}
         </div>
@@ -125,15 +196,31 @@ export default function TransactionTable({
                 <input type="checkbox" checked={allSelected} onChange={toggleAll}
                   className="w-4 h-4 rounded accent-indigo-600 cursor-pointer" title="בחר הכל" />
               </th>
-              <th className="px-4 py-3 text-right">תאריך</th>
+              <th className="px-4 py-3 text-right cursor-pointer select-none hover:text-indigo-600"
+                onClick={() => toggleSort('date')}>
+                תאריך {sortIcon('date')}
+              </th>
               <th className="px-4 py-3 text-right">תיאור</th>
-              <th className="px-4 py-3 text-left">סכום</th>
-              <th className="px-4 py-3 text-right">קטגוריה</th>
-              <th className="px-4 py-3 text-center w-28">פעולו��</th>
+              <th className="px-4 py-3 text-left cursor-pointer select-none hover:text-indigo-600"
+                onClick={() => toggleSort('amount')}>
+                סכום {sortIcon('amount')}
+              </th>
+              <th className="px-4 py-3 text-right cursor-pointer select-none hover:text-indigo-600"
+                onClick={() => toggleSort('category')}>
+                קטגוריה {sortIcon('category')}
+              </th>
+              <th className="px-4 py-3 text-center w-28">פעולות</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {transactions.map(t => (
+            {visible.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-5 py-8 text-center text-gray-400 text-xs">
+                  לא נמצאו עסקאות התואמות את החיפוש
+                </td>
+              </tr>
+            )}
+            {visible.map(t => (
               <>
                 <tr key={t.id} className={`tx-row ${selected.has(t.id) ? 'bg-indigo-50' : ''}`}>
                   <td className="px-3 py-2.5">
@@ -155,7 +242,7 @@ export default function TransactionTable({
                             className="border border-gray-300 rounded-md px-2 py-1 text-xs w-full min-w-[160px]" dir="auto" />
                           <input value={editState.notes}
                             onChange={e => setEditState(s => ({ ...s, notes: e.target.value }))}
-                            placeholder="��ערה (אופציונלי)"
+                            placeholder="הערה (אופציונלי)"
                             className="border border-gray-200 rounded-md px-2 py-1 text-xs w-full text-gray-500" dir="auto" />
                         </div>
                       </td>
@@ -177,7 +264,7 @@ export default function TransactionTable({
                           <button onClick={() => saveEdit(t.id)}
                             className="px-2 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600">שמור</button>
                           <button onClick={() => setEditingId(null)}
-                            className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300">בי��ול</button>
+                            className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300">ביטול</button>
                         </div>
                       </td>
                     </>
@@ -217,7 +304,6 @@ export default function TransactionTable({
                   )}
                 </tr>
 
-                {/* Quick note row */}
                 {quickNoteId === t.id && (
                   <tr key={`note-${t.id}`} className="bg-amber-50">
                     <td colSpan={6} className="px-5 py-2">
