@@ -11,28 +11,65 @@ function monthLabel(month: string): string {
   return `${names[m - 1]} ${y}`;
 }
 
-function summarise(txs: Array<{ amount: number; description: string; category: string; date: Date }>) {
+function summarise(txs: Array<{ amount: number }>) {
   const income = txs.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
   const expenses = txs.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
   return { income, expenses, net: income - expenses };
 }
 
+type Tx = { amount: number; description: string; category: string; date: Date; month: string };
+
+function currencySection(
+  cur: string,
+  txs: Tx[],
+  focusMonth: string,
+  isCurrent: boolean,
+): string {
+  const byMonth = new Map<string, Tx[]>();
+  for (const t of txs) {
+    if (!byMonth.has(t.month)) byMonth.set(t.month, []);
+    byMonth.get(t.month)!.push(t);
+  }
+
+  const currentTx = byMonth.get(focusMonth) ?? [];
+  const { income, expenses, net } = summarise(currentTx);
+
+  const txLines = currentTx.length
+    ? currentTx.map(t => {
+        const d = new Date(t.date);
+        const ds = `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
+        return `    ${ds} | ${t.description} | ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)} | ${CATEGORY_LABELS[t.category] || t.category || 'לא מסווג'}`;
+      }).join('\n')
+    : '    (אין עסקאות בחודש זה)';
+
+  const sortedMonths = Array.from(byMonth.keys()).sort();
+  const history = sortedMonths
+    .filter(m => m !== focusMonth)
+    .map(m => {
+      const mtxs = byMonth.get(m)!;
+      const { income: hi, expenses: he, net: hn } = summarise(mtxs);
+      const top = [...mtxs].sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)).slice(0, 5);
+      const topStr = top.map(t => `      • ${t.description}: ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)}`).join('\n');
+      return `    ${monthLabel(m)} (${mtxs.length} עסקאות): הכנסות ${hi.toFixed(2)} | הוצאות ${he.toFixed(2)} | נטו ${hn.toFixed(2)}\n${topStr}`;
+    }).join('\n');
+
+  const marker = isCurrent ? ' ◄ החשבון הנוכחי' : '';
+  return `══ חשבון ${cur}${marker} ══
+  ${monthLabel(focusMonth)}: הכנסות ${income.toFixed(2)} ${cur} | הוצאות ${expenses.toFixed(2)} ${cur} | נטו ${net.toFixed(2)} ${cur} | עסקאות: ${currentTx.length}
+  עסקאות מלאות:
+${txLines}
+  היסטוריה:
+${history || '    אין נתונים היסטוריים'}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { currency, month, messages } = await req.json();
+    if (!currency || !month) return new Response('נתונים חסרים', { status: 400 });
 
-    if (!currency || !month) {
-      return new Response('נתונים חסרים', { status: 400 });
-    }
-
-    // Fetch ALL transactions for this account from DB
-    const account = await prisma.account.findUnique({ where: { currency } });
-    if (!account) {
-      return new Response('חשבון לא נמצא', { status: 404 });
-    }
-
-    const [allTx, customCats] = await Promise.all([
-      prisma.transaction.findMany({ where: { accountId: account.id }, orderBy: { date: 'asc' } }),
+    // Always fetch ALL accounts and their transactions
+    const [accounts, customCats] = await Promise.all([
+      prisma.account.findMany(),
       prisma.customCategory.findMany({ orderBy: { createdAt: 'asc' } }),
     ]);
 
@@ -41,65 +78,38 @@ export async function POST(req: NextRequest) {
       ...customCats.map(c => c.name),
     ];
 
-    if (!allTx.length) {
-      const encoder = new TextEncoder();
+    const txsByAccount = await Promise.all(
+      accounts.map(a =>
+        prisma.transaction.findMany({ where: { accountId: a.id }, orderBy: { date: 'asc' } })
+          .then(txs => ({ currency: a.currency, txs }))
+      )
+    );
+
+    const totalTx = txsByAccount.reduce((s, a) => s + a.txs.length, 0);
+    if (totalTx === 0) {
       return new Response(
         new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode('אין עסקאות לניתוח.')); c.close(); } }),
         { headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
       );
     }
 
-    // Group by month
-    const byMonth = new Map<string, typeof allTx>();
-    for (const t of allTx) {
-      const m = t.month;
-      if (!byMonth.has(m)) byMonth.set(m, []);
-      byMonth.get(m)!.push(t);
-    }
+    const sections = txsByAccount.map(({ currency: cur, txs }) =>
+      currencySection(cur, txs, month, cur === currency || currency === 'CONSOLIDATED')
+    ).join('\n\n');
 
-    const currentTx = byMonth.get(month) ?? [];
-    const { income: cIncome, expenses: cExpenses, net: cNet } = summarise(currentTx);
+    const viewingNote = currency === 'CONSOLIDATED'
+      ? 'תצוגה מאוחדת (כל המטבעות)'
+      : `צופה כרגע בחשבון ${currency}`;
 
-    // Current month — full transaction list
-    const currentDetail = currentTx.length
-      ? currentTx.map(t => {
-          const d = new Date(t.date);
-          const dateStr = `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
-          return `  ${dateStr} | ${t.description} | ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)} | ${CATEGORY_LABELS[t.category] || t.category || 'לא מסווג'}`;
-        }).join('\n')
-      : '  (אין עסקאות בחודש זה)';
-
-    // Historical months — summary only
-    const sortedMonths = Array.from(byMonth.keys()).sort();
-    const historySections = sortedMonths
-      .filter(m => m !== month)
-      .map(m => {
-        const txs = byMonth.get(m)!;
-        const { income, expenses, net } = summarise(txs);
-        // Top 5 transactions by absolute amount
-        const top = [...txs].sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)).slice(0, 5);
-        const topStr = top.map(t => `    • ${t.description}: ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)}`).join('\n');
-        return `${monthLabel(m)} (${txs.length} עסקאות):
-  הכנסות: ${income.toFixed(2)} | הוצאות: ${expenses.toFixed(2)} | נטו: ${net.toFixed(2)}
-  5 עסקאות גדולות:
-${topStr}`;
-      }).join('\n\n');
-
-    const systemPrompt = `אתה אנליסט פיננסי מנוסה. עוזר לבעל עסק לנתח את הנתונים הפיננסיים שלו.
+    const systemPrompt = `אתה אנליסט פיננסי מנוסה עם גישה מלאה לכל החשבונות של העסק.
 השב תמיד בעברית, בצורה ברורה וישירה.
-מטבע: ${currency}
+${viewingNote} — חודש: ${monthLabel(month)}
 
-כל הקטגוריות הזמינות במערכת: ${allCategoryNames.join(' | ')}
+כל הקטגוריות הזמינות: ${allCategoryNames.join(' | ')}
 
-══ החודש הנוכחי שהמשתמש צופה בו: ${monthLabel(month)} ══
-הכנסות: ${cIncome.toFixed(2)} | הוצאות: ${cExpenses.toFixed(2)} | תזרים נטו: ${cNet.toFixed(2)}
-מספר עסקאות: ${currentTx.length}
+יש לך גישה לנתונים של כל המטבעות — GBP, ILS, USD — כולל עסקאות מלאות והיסטוריה.
 
-עסקאות מלאות של החודש הנוכחי:
-${currentDetail}
-
-══ נתונים היסטוריים (כל שאר החודשים) ══
-${historySections || 'אין נתונים היסטוריים עדיין.'}`;
+${sections}`;
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -118,9 +128,7 @@ ${historySections || 'אין נתונים היסטוריים עדיין.'}`;
             }
           }
           controller.close();
-        } catch (err) {
-          controller.error(err);
-        }
+        } catch (err) { controller.error(err); }
       },
     });
 
