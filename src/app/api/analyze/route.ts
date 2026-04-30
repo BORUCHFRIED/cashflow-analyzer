@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { prisma } from '@/lib/prisma';
-import { CATEGORY_LABELS } from '@/types';
+import { CATEGORY_LABELS, CATEGORIES } from '@/types';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -31,10 +31,15 @@ export async function POST(req: NextRequest) {
       return new Response('חשבון לא נמצא', { status: 404 });
     }
 
-    const allTx = await prisma.transaction.findMany({
-      where: { accountId: account.id },
-      orderBy: { date: 'asc' },
-    });
+    const [allTx, customCats] = await Promise.all([
+      prisma.transaction.findMany({ where: { accountId: account.id }, orderBy: { date: 'asc' } }),
+      prisma.customCategory.findMany({ orderBy: { createdAt: 'asc' } }),
+    ]);
+
+    const allCategoryNames = [
+      ...CATEGORIES.map(c => CATEGORY_LABELS[c]),
+      ...customCats.map(c => c.name),
+    ];
 
     if (!allTx.length) {
       const encoder = new TextEncoder();
@@ -83,6 +88,8 @@ ${topStr}`;
     const systemPrompt = `אתה אנליסט פיננסי מנוסה. עוזר לבעל עסק לנתח את הנתונים הפיננסיים שלו.
 השב תמיד בעברית, בצורה ברורה וישירה.
 מטבע: ${currency}
+
+כל הקטגוריות הזמינות במערכת: ${allCategoryNames.join(' | ')}
 
 ══ החודש הנוכחי שהמשתמש צופה בו: ${monthLabel(month)} ══
 הכנסות: ${cIncome.toFixed(2)} | הוצאות: ${cExpenses.toFixed(2)} | תזרים נטו: ${cNet.toFixed(2)}
