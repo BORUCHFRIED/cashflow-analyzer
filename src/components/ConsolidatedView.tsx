@@ -271,7 +271,6 @@ export default function ConsolidatedView({ month }: Props) {
       <AIAnalysisPanel
         transactions={allTransactions}
         currency="ILS"
-        extraContext={fxContext}
       />
     </div>
   );

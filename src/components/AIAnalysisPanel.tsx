@@ -1,46 +1,61 @@
 'use client';
-import { useState } from 'react';
-import { Transaction, AnalysisMode } from '@/types';
+import { useState, useRef, useEffect } from 'react';
+import { Transaction } from '@/types';
 
-const MODES: { key: AnalysisMode; label: string; icon: string }[] = [
-  { key: 'full',    label: 'ניתוח מלא',         icon: '🔍' },
-  { key: 'savings', label: 'המלצות חיסכון',      icon: '💰' },
-  { key: 'risk',    label: 'זיהוי סיכונים',      icon: '⚠️' },
-];
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 interface Props {
   transactions: Transaction[];
   currency: string;
-  extraContext?: string;
 }
 
-export default function AIAnalysisPanel({ transactions, currency, extraContext }: Props) {
-  const [mode, setMode] = useState<AnalysisMode>('full');
-  const [text, setText] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+const SUGGESTIONS = [
+  'מה המגמה של ההוצאות הכי גדולות?',
+  'מהן ההכנסות הגבוהות ביותר?',
+  'איפה אפשר לחסוך?',
+  'מה הסיכונים הפיננסיים?',
+  'נתח את הרווחיות שלי',
+];
 
-  async function runAnalysis(selectedMode: AnalysisMode) {
-    setMode(selectedMode);
-    setText('');
-    setError('');
-    setLoading(true);
+export default function AIAnalysisPanel({ transactions, currency }: Props) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [streaming, setStreaming] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  async function send(text?: string) {
+    const question = (text ?? input).trim();
+    if (!question || streaming) return;
+
+    const userMsg: Message = { role: 'user', content: question };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setInput('');
+    setStreaming(true);
+
+    const assistantMsg: Message = { role: 'assistant', content: '' };
+    setMessages(prev => [...prev, assistantMsg]);
 
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactions,
-          mode: selectedMode,
-          currency,
-          extraContext,
-        }),
+        body: JSON.stringify({ transactions, currency, messages: newMessages }),
       });
 
       if (!res.ok || !res.body) {
-        setError('שגיאה בקבלת ניתוח מ-AI');
-        setLoading(false);
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', content: 'שגיאה בקבלת תשובה מ-AI' };
+          return updated;
+        });
         return;
       }
 
@@ -50,67 +65,103 @@ export default function AIAnalysisPanel({ transactions, currency, extraContext }
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        setText(prev => prev + decoder.decode(value, { stream: true }));
+        const chunk = decoder.decode(value, { stream: true });
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: 'assistant',
+            content: updated[updated.length - 1].content + chunk,
+          };
+          return updated;
+        });
       }
     } catch {
-      setError('שגיאת חיבור לשרת');
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'assistant', content: 'שגיאת חיבור לשרת' };
+        return updated;
+      });
     } finally {
-      setLoading(false);
+      setStreaming(false);
     }
   }
 
   return (
-    <div className="card p-5 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">ניתוח AI</h3>
-        <span className="text-xs text-gray-400">מופעל על ידי Claude</span>
-      </div>
-
-      <div className="flex gap-2 flex-wrap">
-        {MODES.map(m => (
-          <button
-            key={m.key}
-            onClick={() => runAnalysis(m.key)}
-            disabled={loading}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-              ${mode === m.key && (text || loading)
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <span>{m.icon}</span>
-            <span>{m.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-sm text-rose-700">
-          {error}
+    <div className="card flex flex-col" style={{ height: '480px' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <span className="text-base">✨</span>
+          <h3 className="text-sm font-semibold text-gray-700">צ׳אט AI פיננסי</h3>
         </div>
-      )}
-
-      {loading && !text && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <div className="animate-spin w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full" />
-          <span>מנתח נתונים...</span>
-        </div>
-      )}
-
-      {text && (
-        <div className="bg-gray-50 rounded-xl p-4 max-h-80 overflow-y-auto">
-          <p className="streaming-text text-sm text-gray-800 leading-relaxed">{text}</p>
-          {loading && (
-            <span className="inline-block w-1.5 h-4 bg-indigo-500 animate-pulse ms-1 align-middle" />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">Claude</span>
+          {messages.length > 0 && (
+            <button onClick={() => setMessages([])}
+              className="text-xs text-gray-400 hover:text-rose-500 transition-colors px-1">
+              נקה
+            </button>
           )}
         </div>
-      )}
+      </div>
 
-      {!text && !loading && !error && (
-        <p className="text-sm text-gray-400 text-center py-4">
-          בחר מצב ניתוח לקבלת תובנות AI
-        </p>
-      )}
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
+        {messages.length === 0 && (
+          <div className="flex flex-col gap-3 h-full justify-center">
+            <p className="text-xs text-gray-400 text-center">שאל אותי כל שאלה על הנתונים הפיננסיים שלך</p>
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {SUGGESTIONS.map(s => (
+                <button key={s} onClick={() => send(s)}
+                  className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors text-right">
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap
+              ${m.role === 'user'
+                ? 'bg-indigo-600 text-white rounded-br-sm'
+                : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}>
+              {m.content}
+              {m.role === 'assistant' && streaming && i === messages.length - 1 && m.content === '' && (
+                <span className="flex gap-1 py-1">
+                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+              )}
+              {m.role === 'assistant' && streaming && i === messages.length - 1 && m.content !== '' && (
+                <span className="inline-block w-1.5 h-3.5 bg-indigo-500 animate-pulse ms-0.5 align-middle rounded-sm" />
+              )}
+            </div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div className="border-t border-gray-100 px-4 py-3">
+        <div className="flex gap-2">
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+            placeholder="שאל שאלה על הנתונים..."
+            disabled={streaming}
+            dir="auto"
+            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-50"
+          />
+          <button onClick={() => send()} disabled={!input.trim() || streaming}
+            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-40 transition-colors whitespace-nowrap">
+            שלח
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
