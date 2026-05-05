@@ -4,8 +4,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts';
-import { Account, ExchangeRate, Transaction, CURRENCY_SYMBOLS } from '@/types';
-import { computeMetrics, formatCurrency, currentMonth } from '@/lib/utils';
+import { Account, ExchangeRate, CURRENCY_SYMBOLS } from '@/types';
+import { computeMetrics, formatCurrency } from '@/lib/utils';
 import AIAnalysisPanel from './AIAnalysisPanel';
 
 interface Props { month: string }
@@ -118,21 +118,6 @@ export default function ConsolidatedView({ month }: Props) {
     'הכנסות': Math.round(c.incomeILS),
     'הוצאות': Math.round(c.expensesILS),
   }));
-
-  const allTransactions: Transaction[] = [
-    ...perCurrency.map(c => (accounts[c.cur]?.transactions ?? []).map(t => ({
-      ...t,
-      description: `[${c.cur}] ${t.description}`,
-      amount: toILS(t.amount, c.cur, numRates),
-    }))),
-  ].flat();
-
-  const fxContext = `שערי חליפין בשימוש: GBP→ILS: ${numRates.GBP_ILS}, USD→ILS: ${numRates.USD_ILS}
-סה"כ הכנסות (ILS): ${totalIncomeILS.toFixed(0)} ₪
-סה"כ הוצאות (ILS): ${totalExpensesILS.toFixed(0)} ₪
-תזרים נטו (ILS): ${totalNetILS.toFixed(0)} ₪
-
-נתח חשיפה למטבע חוץ וסיכון FX. עסקה ב-GBP: ${perCurrency.find(c=>c.cur==='GBP')?.metrics.netCashflow.toFixed(0)} GBP. עסקה ב-USD: ${perCurrency.find(c=>c.cur==='USD')?.metrics.netCashflow.toFixed(0)} USD.`;
 
   return (
     <div className="flex flex-col gap-5">
@@ -268,7 +253,7 @@ export default function ConsolidatedView({ month }: Props) {
       </div>
 
       {/* AI analysis */}
-      <AIAnalysisPanel currency="ILS" month={currentMonth()} />
+      <AIAnalysisPanel currency="CONSOLIDATED" month={month} />
     </div>
   );
 }

@@ -68,10 +68,12 @@ export async function POST(req: NextRequest) {
     if (!currency || !month) return new Response('נתונים חסרים', { status: 400 });
 
     // Always fetch ALL accounts and their transactions
-    const [accounts, customCats] = await Promise.all([
+    const [accounts, customCats, aiCtx] = await Promise.all([
       prisma.account.findMany(),
       prisma.customCategory.findMany({ orderBy: { createdAt: 'asc' } }),
+      prisma.aIContext.findUnique({ where: { id: 'main' } }),
     ]);
+    const businessInstructions = aiCtx?.instructions?.trim() ?? '';
 
     const allCategoryNames = [
       ...CATEGORIES.map(c => CATEGORY_LABELS[c]),
@@ -106,7 +108,7 @@ export async function POST(req: NextRequest) {
 ${viewingNote} — חודש: ${monthLabel(month)}
 
 כל הקטגוריות הזמינות: ${allCategoryNames.join(' | ')}
-
+${businessInstructions ? `\n══ הוראות עסקיות קבועות ══\n${businessInstructions}\n` : ''}
 יש לך גישה לנתונים של כל המטבעות — GBP, ILS, USD — כולל עסקאות מלאות והיסטוריה.
 
 ${sections}`;

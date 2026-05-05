@@ -44,6 +44,12 @@ model CategoryRule {
   createdAt DateTime @default(now())
 }
 
+model AIContext {
+  id           String   @id @default("main")
+  instructions String   @default("")
+  updatedAt    DateTime @updatedAt
+}
+
 model ExchangeRate {
   id           String   @id @default(cuid())
   fromCurrency String

@@ -10,6 +10,7 @@ import UploadModal from './UploadModal';
 import RulesPanel from './RulesPanel';
 import CategoriesManager from './CategoriesManager';
 import { useCategories } from '@/hooks/useCategories';
+import AIContextPanel from './AIContextPanel';
 
 interface Props {
   currency: string;
@@ -246,6 +247,7 @@ export default function AccountView({ currency, month }: Props) {
           <CategoryChart transactions={transactions} currency={currency} />
           <AIAnalysisPanel currency={currency} month={month} />
         </div>
+        <AIContextPanel />
         <CategoriesManager
           options={categoryOptions}
           custom={customCategories}
