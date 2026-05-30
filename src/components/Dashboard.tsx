@@ -1,6 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Banknote, PoundSterling, DollarSign, Globe,
+  LogOut, Moon, Sun, Menu, X, TrendingUp,
+} from 'lucide-react';
 import { CURRENCY_SYMBOLS } from '@/types';
 import { currentMonth, monthLabel } from '@/lib/utils';
 import MonthSelector from './MonthSelector';
@@ -9,17 +13,31 @@ import ConsolidatedView from './ConsolidatedView';
 
 type Tab = 'GBP' | 'ILS' | 'USD' | 'CONSOLIDATED';
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'ILS', label: `${CURRENCY_SYMBOLS.ILS} ILS — שקל` },
-  { key: 'GBP', label: `${CURRENCY_SYMBOLS.GBP} GBP — פאונד` },
-  { key: 'USD', label: `${CURRENCY_SYMBOLS.USD} USD — דולר` },
-  { key: 'CONSOLIDATED', label: '🌐 כולל' },
+const TABS: { key: Tab; label: string; sub: string; Icon: React.ElementType }[] = [
+  { key: 'ILS',          label: 'שקל ישראלי',    sub: `₪ ILS`,   Icon: Banknote       },
+  { key: 'GBP',          label: 'פאונד בריטי',   sub: `£ GBP`,   Icon: PoundSterling  },
+  { key: 'USD',          label: 'דולר אמריקאי',  sub: `$ USD`,   Icon: DollarSign     },
+  { key: 'CONSOLIDATED', label: 'תצוגה מאוחדת',  sub: 'כל המטבעות', Icon: Globe       },
 ];
 
 export default function Dashboard() {
   const [month, setMonth] = useState(currentMonth);
   const [tab, setTab] = useState<Tab>('ILS');
+  const [dark, setDark] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains('dark'));
+  }, []);
+
+  function toggleDark() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    document.documentElement.classList.toggle('light', !next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+  }
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -27,70 +45,106 @@ export default function Dashboard() {
     router.refresh();
   }
 
+  const activeTab = TABS.find(t => t.key === tab)!;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">
-                📊 ניתוח תזרים מזומנים
-              </h1>
-              <p className="text-xs text-gray-500 mt-0.5">ניהול פיננסי רב-מטבעי</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <MonthSelector month={month} onChange={setMonth} />
-              <button
-                onClick={handleLogout}
-                className="px-3 py-2 text-sm text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                title="התנתק"
-              >
-                🚪 יציאה
-              </button>
-            </div>
+    /* Outer shell: LTR flex so sidebar is always visually on the left */
+    <div className="flex h-screen overflow-hidden" dir="ltr">
+
+      {/* ── Sidebar ── */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 flex flex-col w-64
+        transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `} style={{ background: 'var(--sidebar-bg)' }}>
+
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="w-8 h-8 bg-brand-600 rounded-xl flex items-center justify-center flex-shrink-0">
+            <TrendingUp size={16} className="text-white" />
+          </div>
+          <div dir="rtl">
+            <p className="text-sm font-semibold text-white leading-none">CashFlow</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>ניתוח פיננסי</p>
           </div>
         </div>
-      </header>
 
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <nav className="flex gap-1 overflow-x-auto">
-            {TABS.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`flex-shrink-0 px-5 py-3.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap
-                  ${tab === t.key
-                    ? 'border-indigo-600 text-indigo-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
-                  }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </nav>
+        {/* Month selector in sidebar */}
+        <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+          <p className="text-xs mb-2 px-1" style={{ color: 'rgba(255,255,255,0.4)' }}>חודש</p>
+          <MonthSelector month={month} onChange={setMonth} dark />
         </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" dir="rtl">
+          <p className="text-xs px-3 mb-2 font-medium" style={{ color: 'rgba(255,255,255,0.3)' }}>חשבונות</p>
+          {TABS.map(({ key, label, sub, Icon }) => (
+            <button
+              key={key}
+              onClick={() => { setTab(key); setSidebarOpen(false); }}
+              className={`sidebar-item ${tab === key ? 'active' : ''}`}
+            >
+              <Icon size={18} className="flex-shrink-0" />
+              <div className="text-right flex-1 min-w-0">
+                <p className="text-sm leading-none">{label}</p>
+                <p className="text-xs mt-0.5 opacity-60">{sub}</p>
+              </div>
+            </button>
+          ))}
+        </nav>
+
+        {/* Bottom controls */}
+        <div className="px-3 py-4 border-t space-y-1" style={{ borderColor: 'rgba(255,255,255,0.08)' }} dir="rtl">
+          <button onClick={toggleDark} className="sidebar-item">
+            {dark ? <Sun size={18} className="flex-shrink-0" /> : <Moon size={18} className="flex-shrink-0" />}
+            <span>{dark ? 'מצב יום' : 'מצב לילה'}</span>
+          </button>
+          <button onClick={handleLogout} className="sidebar-item" style={{ color: 'rgba(239,68,68,0.8)' }}>
+            <LogOut size={18} className="flex-shrink-0" />
+            <span>יציאה</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* ── Main area ── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Top bar */}
+        <header className="flex items-center justify-between px-4 sm:px-6 h-14 flex-shrink-0 border-b"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-3" dir="rtl">
+            {/* Mobile hamburger */}
+            <button onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
+              style={{ color: 'var(--text-secondary)' }}>
+              <Menu size={20} />
+            </button>
+            <div>
+              <h1 className="text-sm font-semibold leading-none" style={{ color: 'var(--text-primary)' }}>
+                {activeTab.label}
+              </h1>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {monthLabel(month)}
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ background: 'var(--bg)' }} dir="rtl">
+          <div className="max-w-7xl mx-auto">
+            {tab === 'CONSOLIDATED'
+              ? <ConsolidatedView month={month} />
+              : <AccountView currency={tab} month={month} />
+            }
+          </div>
+        </main>
       </div>
-
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="mb-4 text-xs text-gray-400">
-          מציג נתונים עבור: {monthLabel(month)}
-        </div>
-
-        {tab === 'CONSOLIDATED' ? (
-          <ConsolidatedView month={month} />
-        ) : (
-          <AccountView currency={tab} month={month} />
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="text-center text-xs text-gray-400 py-6 border-t border-gray-100 mt-8">
-        ניתוח תזרים מזומנים | מופעל על ידי Claude AI
-      </footer>
     </div>
   );
 }

@@ -179,10 +179,37 @@ export default function AccountView({ currency, month }: Props) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-gray-500">טוען נתונים...</span>
+      <div className="flex flex-col gap-5 animate-fade-in">
+        {/* Metric skeletons */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="card p-5 flex flex-col gap-3">
+              <div className="skeleton h-10 w-10 rounded-xl" />
+              <div className="skeleton h-3 w-20 rounded" />
+              <div className="skeleton h-7 w-32 rounded" />
+            </div>
+          ))}
+        </div>
+        {/* Chart + AI skeletons */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="card p-5"><div className="skeleton h-52 w-full rounded-xl" /></div>
+          <div className="card p-5"><div className="skeleton h-52 w-full rounded-xl" /></div>
+        </div>
+        {/* Table skeleton */}
+        <div className="card overflow-hidden">
+          <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+            <div className="skeleton h-4 w-32 rounded" />
+          </div>
+          <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="px-5 py-4 flex items-center gap-4">
+                <div className="skeleton h-4 w-20 rounded" />
+                <div className="skeleton h-4 flex-1 rounded" />
+                <div className="skeleton h-4 w-16 rounded" />
+                <div className="skeleton h-5 w-24 rounded-full" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );

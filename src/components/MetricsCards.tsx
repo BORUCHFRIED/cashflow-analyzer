@@ -1,4 +1,5 @@
 'use client';
+import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Percent } from 'lucide-react';
 import { Metrics } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
@@ -7,59 +8,94 @@ interface Props {
   currency: string;
 }
 
-function Card({
-  label,
-  value,
-  sub,
-  color,
-  icon,
-}: {
+interface CardProps {
   label: string;
   value: string;
   sub?: string;
-  color: string;
-  icon: string;
-}) {
+  trend?: 'up' | 'down' | 'neutral';
+  Icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  valueColor?: string;
+}
+
+function MetricCard({ label, value, sub, trend, Icon, iconBg, iconColor, valueColor }: CardProps) {
   return (
-    <div className="card p-5 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-500">{label}</span>
-        <span className="text-2xl">{icon}</span>
+    <div className="card p-5 flex flex-col gap-3 animate-fade-in">
+      <div className="flex items-start justify-between">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+          <Icon size={18} className={iconColor} />
+        </div>
+        {trend && trend !== 'neutral' && (
+          <span className={`flex items-center gap-0.5 text-xs font-medium px-2 py-1 rounded-full ${
+            trend === 'up' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-rose-50 text-rose-600 dark:bg-rose-900/30'
+          }`}>
+            {trend === 'up'
+              ? <ArrowUpRight size={12} />
+              : <ArrowDownRight size={12} />}
+            {sub}
+          </span>
+        )}
       </div>
-      <div className={`text-2xl font-bold ${color}`}>{value}</div>
-      {sub && <div className="text-xs text-gray-400">{sub}</div>}
+      <div>
+        <p className="metric-label mb-1">{label}</p>
+        <p className={`text-2xl font-bold tracking-tight font-mono tabular-nums ${valueColor ?? ''}`}
+          style={!valueColor ? { color: 'var(--text-primary)' } : {}}>
+          {value}
+        </p>
+        {sub && trend === 'neutral' && (
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{sub}</p>
+        )}
+      </div>
     </div>
   );
 }
 
 export default function MetricsCards({ metrics, currency }: Props) {
   const { totalIncome, totalExpenses, netCashflow, profitMargin } = metrics;
+  const marginStatus = profitMargin >= 20 ? 'up' : profitMargin >= 0 ? 'neutral' : 'down';
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card
+      <MetricCard
         label="סה״כ הכנסות"
         value={formatCurrency(totalIncome, currency)}
-        color="text-emerald-600"
-        icon="📈"
+        sub="הכנסה ברוטו"
+        trend="neutral"
+        Icon={TrendingUp}
+        iconBg="bg-emerald-50 dark:bg-emerald-900/30"
+        iconColor="text-emerald-600"
+        valueColor="text-emerald-600"
       />
-      <Card
+      <MetricCard
         label="סה״כ הוצאות"
         value={formatCurrency(totalExpenses, currency)}
-        color="text-rose-600"
-        icon="📉"
+        sub="הוצאה כוללת"
+        trend="neutral"
+        Icon={TrendingDown}
+        iconBg="bg-rose-50 dark:bg-rose-900/30"
+        iconColor="text-rose-600"
+        valueColor="text-rose-600"
       />
-      <Card
+      <MetricCard
         label="תזרים נטו"
         value={`${netCashflow >= 0 ? '+' : ''}${formatCurrency(netCashflow, currency)}`}
-        color={netCashflow >= 0 ? 'text-indigo-600' : 'text-rose-600'}
-        icon={netCashflow >= 0 ? '✅' : '⚠️'}
+        trend={netCashflow >= 0 ? 'neutral' : 'neutral'}
+        sub={netCashflow >= 0 ? 'חיובי' : 'שלילי'}
+        Icon={netCashflow >= 0 ? ArrowUpRight : ArrowDownRight}
+        iconBg={netCashflow >= 0 ? 'bg-brand-50 dark:bg-brand-900/30' : 'bg-rose-50 dark:bg-rose-900/30'}
+        iconColor={netCashflow >= 0 ? 'text-brand-600' : 'text-rose-600'}
+        valueColor={netCashflow >= 0 ? 'text-brand-600' : 'text-rose-600'}
       />
-      <Card
+      <MetricCard
         label="שולי רווח"
         value={`${profitMargin.toFixed(1)}%`}
         sub={profitMargin >= 20 ? 'בריא' : profitMargin >= 0 ? 'גבולי' : 'הפסד'}
-        color={profitMargin >= 20 ? 'text-emerald-600' : profitMargin >= 0 ? 'text-amber-500' : 'text-rose-600'}
-        icon="💹"
+        trend={marginStatus}
+        Icon={Percent}
+        iconBg={profitMargin >= 20 ? 'bg-emerald-50 dark:bg-emerald-900/30' : profitMargin >= 0 ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-rose-50 dark:bg-rose-900/30'}
+        iconColor={profitMargin >= 20 ? 'text-emerald-600' : profitMargin >= 0 ? 'text-amber-500' : 'text-rose-600'}
+        valueColor={profitMargin >= 20 ? 'text-emerald-600' : profitMargin >= 0 ? 'text-amber-500' : 'text-rose-600'}
       />
     </div>
   );

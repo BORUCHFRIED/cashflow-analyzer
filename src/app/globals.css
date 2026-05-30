@@ -2,45 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ───────────────────────────────────────────── */
 :root {
-  --foreground: #0f172a;
-  --background: #f8fafc;
+  --bg:              #f8fafc;
+  --surface:         #ffffff;
+  --surface-raised:  #ffffff;
+  --sidebar-bg:      #0f172a;
+  --sidebar-item:    rgba(255,255,255,0.06);
+  --sidebar-active:  #4f46e5;
+  --text-primary:    #0f172a;
+  --text-secondary:  #64748b;
+  --text-muted:      #94a3b8;
+  --text-inverse:    #f8fafc;
+  --border:          #e2e8f0;
+  --border-subtle:   #f1f5f9;
+  --income:          #059669;
+  --expense:         #dc2626;
+  --radius-card:     14px;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Segoe UI', Arial, 'Helvetica Neue', sans-serif;
+.dark {
+  --bg:             #0f172a;
+  --surface:        #1e293b;
+  --surface-raised: #263348;
+  --sidebar-bg:     #080e1a;
+  --sidebar-item:   rgba(255,255,255,0.05);
+  --sidebar-active: #4f46e5;
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+  --border:         #334155;
+  --border-subtle:  #1e293b;
 }
 
-/* Smooth transitions */
-* {
-  transition-property: color, background-color, border-color;
-  transition-timing-function: ease;
-  transition-duration: 150ms;
+/* ── Base ────────────────────────────────────────────────────── */
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-inter), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    transition-property: color, background-color, border-color, box-shadow, opacity;
+    transition-timing-function: ease;
+    transition-duration: 150ms;
+  }
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-/* AI streaming text */
-.streaming-text {
-  white-space: pre-wrap;
-  line-height: 1.7;
-}
-
-/* Table row hover */
-.tx-row:hover {
-  background-color: #f8fafc;
+/* ── Dark mode via system preference (fallback) ──────────────── */
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    --bg:             #0f172a;
+    --surface:        #1e293b;
+    --surface-raised: #263348;
+    --sidebar-bg:     #080e1a;
+    --text-primary:   #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted:     #475569;
+    --border:         #334155;
+    --border-subtle:  #1e293b;
+  }
 }
 
-/* Number inputs aligned left in RTL */
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Component tokens ────────────────────────────────────────── */
+@layer components {
+  .card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .card-hover {
+    @apply card;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .card-hover:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+    transform: translateY(-1px);
+  }
+
+  /* Sidebar item */
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full transition-all;
+    color: rgba(255,255,255,0.65);
+  }
+  .sidebar-item:hover {
+    background: var(--sidebar-item);
+    color: #fff;
+  }
+  .sidebar-item.active {
+    background: var(--sidebar-active);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.4);
+  }
+
+  /* Skeleton */
+  .skeleton {
+    @apply rounded-lg bg-gray-200 dark:bg-slate-700 animate-skeleton;
+  }
+
+  /* Transaction row */
+  .tx-row {
+    @apply transition-colors duration-100;
+  }
+  .tx-row:hover {
+    background-color: var(--border-subtle);
+  }
+
+  /* Amount font */
+  .amount {
+    @apply font-mono tabular-nums font-semibold;
+  }
+
+  /* Metric label */
+  .metric-label {
+    @apply text-xs font-medium uppercase tracking-wide;
+    color: var(--text-muted);
+  }
+}
+
+/* ── Inputs & forms ──────────────────────────────────────────── */
 input[type="number"],
 input[type="date"],
 .ltr-field {
@@ -48,17 +139,20 @@ input[type="date"],
   text-align: left;
 }
 
-/* RTL date input */
-.date-input {
-  direction: ltr;
+.date-input { direction: ltr; }
+
+/* ── Chat / streaming ────────────────────────────────────────── */
+.streaming-text {
+  white-space: pre-wrap;
+  line-height: 1.75;
 }
 
-/* Card shadow */
-.card {
-  @apply bg-white rounded-xl shadow-sm border border-gray-100;
+/* ── Button press micro-interaction ─────────────────────────── */
+button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
-/* Metric card positive */
-.metric-positive { @apply text-emerald-600; }
-.metric-negative { @apply text-rose-600; }
-.metric-neutral  { @apply text-indigo-600; }
+/* ── Number inputs aligned ───────────────────────────────────── */
+.metric-positive { color: var(--income); }
+.metric-negative { color: var(--expense); }
+.metric-neutral  { @apply text-brand-600; }
