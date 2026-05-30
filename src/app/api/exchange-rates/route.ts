@@ -6,27 +6,17 @@ const DEFAULTS = [
   { fromCurrency: 'USD', toCurrency: 'ILS', rate: 3.73 },
 ];
 
-async function getOrCreateDefaults(month: string) {
-  // Try month-specific rates first
-  let rates = await prisma.exchangeRate.findMany({ where: { month } });
-  if (rates.length > 0) return rates;
-
-  // Fall back to global defaults, creating them if missing
-  let globals = await prisma.exchangeRate.findMany({ where: { month: 'global' } });
-  if (globals.length === 0) {
-    await prisma.exchangeRate.createMany({
-      data: DEFAULTS.map(d => ({ ...d, month: 'global' })),
-    });
-    globals = await prisma.exchangeRate.findMany({ where: { month: 'global' } });
-  }
-  return globals;
+async function getRatesForMonth(month: string) {
+  // Return only explicitly saved rates for this month — no global fallback
+  return prisma.exchangeRate.findMany({ where: { month } });
 }
 
 export async function GET(req: NextRequest) {
   try {
     const month = new URL(req.url).searchParams.get('month') ?? 'global';
-    const rates = await getOrCreateDefaults(month);
-    return NextResponse.json(rates);
+    const rates = await getRatesForMonth(month);
+    // Return rates + whether they are explicitly set for this month
+    return NextResponse.json({ rates, isCustom: rates.length > 0 });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'שגיאה בקריאת שערי חליפין' }, { status: 500 });

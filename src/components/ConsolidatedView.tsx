@@ -21,6 +21,7 @@ function toILS(amount: number, currency: string, rates: Record<string, number>):
 export default function ConsolidatedView({ month }: Props) {
   const [accounts, setAccounts] = useState<Record<string, Account>>({});
   const [rates, setRates] = useState<RateState>({ GBP_ILS: '4.72', USD_ILS: '3.73' });
+  const [ratesCustom, setRatesCustom] = useState(false);
   const [editingRates, setEditingRates] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,8 +38,10 @@ export default function ConsolidatedView({ month }: Props) {
         fetch(`/api/exchange-rates?month=${month}`).then(r => r.json()),
       ]);
       setAccounts({ GBP: gbp, ILS: ils, USD: usd });
+      const { rates: rateList, isCustom } = ratesRes as { rates: ExchangeRate[]; isCustom: boolean };
+      setRatesCustom(isCustom);
       const rateMap: Record<string, string> = {};
-      for (const r of ratesRes as ExchangeRate[]) {
+      for (const r of rateList) {
         rateMap[`${r.fromCurrency}_${r.toCurrency}`] = String(r.rate);
       }
       setRates({
@@ -67,6 +70,7 @@ export default function ConsolidatedView({ month }: Props) {
         }),
       });
       setEditingRates(false);
+      setRatesCustom(true);
     } finally {
       setSavingRates(false);
     }
@@ -127,7 +131,13 @@ export default function ConsolidatedView({ month }: Props) {
       {/* Exchange rates */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-700">שערי חליפין</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-700">שערי חליפין</h3>
+            {ratesCustom
+              ? <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">✓ מוגדר לחודש זה</span>
+              : <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">ברירת מחדל — לא הוגדר לחודש זה</span>
+            }
+          </div>
           {!editingRates ? (
             <button
               onClick={() => setEditingRates(true)}
