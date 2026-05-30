@@ -55,7 +55,8 @@ model ExchangeRate {
   fromCurrency String
   toCurrency   String
   rate         Float
+  month        String   @default("global")
   updatedAt    DateTime @default(now()) @updatedAt
 
-  @@unique([fromCurrency, toCurrency])
+  @@unique([fromCurrency, toCurrency, month])
 }

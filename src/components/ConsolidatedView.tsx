@@ -34,7 +34,7 @@ export default function ConsolidatedView({ month }: Props) {
         fetch(`/api/accounts?currency=GBP&month=${month}`).then(r => r.json()),
         fetch(`/api/accounts?currency=ILS&month=${month}`).then(r => r.json()),
         fetch(`/api/accounts?currency=USD&month=${month}`).then(r => r.json()),
-        fetch('/api/exchange-rates').then(r => r.json()),
+        fetch(`/api/exchange-rates?month=${month}`).then(r => r.json()),
       ]);
       setAccounts({ GBP: gbp, ILS: ils, USD: usd });
       const rateMap: Record<string, string> = {};
@@ -63,6 +63,7 @@ export default function ConsolidatedView({ month }: Props) {
         body: JSON.stringify({
           GBP_ILS: parseFloat(rates.GBP_ILS),
           USD_ILS: parseFloat(rates.USD_ILS),
+          month,
         }),
       });
       setEditingRates(false);
