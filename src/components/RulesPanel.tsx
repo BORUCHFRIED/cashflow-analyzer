@@ -28,9 +28,9 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
 
   async function addRule() {
     setFormError('');
-    if (!category) { setFormError('בחר קטגוריה'); return; }
+    if (!category) { setFormError('Select a category'); return; }
     if (!keyword.trim() && !minAmount && !maxAmount) {
-      setFormError('הוסף לפחות ��ילת מפתח או טווח סכום');
+      setFormError('Add at least a keyword or amount range');
       return;
     }
     setLoading(true);
@@ -51,7 +51,7 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
         setKeyword(''); setMinAmount(''); setMaxAmount(''); setCategory('');
       } else {
         const d = await res.json();
-        setFormError(d.error ?? 'שגיאה');
+        setFormError(d.error ?? 'Error');
       }
     } finally {
       setLoading(false);
@@ -75,8 +75,8 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
       const data = await res.json();
       setApplyResult(
         data.matched > 0
-          ? `✅ סווגו ${data.matched} עס��אות לפי הכללים`
-          : 'לא נמ��או עסקאות לא מסווגות שמתאימות לכללים'
+          ? `✅ ${data.matched} transactions classified by rules`
+          : 'No uncategorized transactions matched the rules'
       );
       if (data.matched > 0) onApplied();
     } finally {
@@ -103,10 +103,10 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
       >
         <div className="flex items-center gap-2">
           <span className="text-base">⚙️</span>
-          <span className="text-sm font-semibold text-gray-700">כללי סיווג אוטומטי</span>
+          <span className="text-sm font-semibold text-gray-700">Auto-Classification Rules</span>
           {rules.length > 0 && (
             <span className="bg-indigo-100 text-indigo-700 text-xs font-medium px-2 py-0.5 rounded-full">
-              {rules.length} כללים
+              {rules.length} rules
             </span>
           )}
         </div>
@@ -119,14 +119,14 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
           {/* Add rule form */}
           <div className="flex flex-col gap-3">
             <p className="text-xs font-medium text-gray-500">
-              הגדר כלל: תיאור ��כיל מילת מפתח <strong>ו/או</strong> סכום בטווח → קטגוריה
+              Define a rule: description contains keyword <strong>and/or</strong> amount in range → category
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <input
                 value={keyword}
                 onChange={e => setKeyword(e.target.value)}
-                placeholder="מילת מפתח (לדוג׳: salary, aws, שכירות)"
+                placeholder="Keyword (e.g. salary, aws, rent)"
                 dir="auto"
                 className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
               />
@@ -135,27 +135,27 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
                 onChange={e => setCategory(e.target.value)}
                 className="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
               >
-                <option value="">בחר קטגוריה</option>
+                <option value="">Select category</option>
                 {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
               <div className="flex gap-2 items-center">
-                <span className="text-xs text-gray-500 whitespace-nowrap">סכום מ:</span>
+                <span className="text-xs text-gray-500 whitespace-nowrap">Amount from:</span>
                 <input
                   type="number"
                   value={minAmount}
                   onChange={e => setMinAmount(e.target.value)}
-                  placeholder="מינימום"
+                  placeholder="Minimum"
                   min="0"
                   className="ltr-field flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 />
               </div>
               <div className="flex gap-2 items-center">
-                <span className="text-xs text-gray-500 whitespace-nowrap">עד:</span>
+                <span className="text-xs text-gray-500 whitespace-nowrap">To:</span>
                 <input
                   type="number"
                   value={maxAmount}
                   onChange={e => setMaxAmount(e.target.value)}
-                  placeholder="מקסימום"
+                  placeholder="Maximum"
                   min="0"
                   className="ltr-field flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 />
@@ -169,14 +169,14 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
               disabled={!category || loading}
               className="self-start px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-40 transition-colors"
             >
-              + הוסף כלל
+              + Add Rule
             </button>
           </div>
 
           {/* Rules list */}
           {rules.length > 0 ? (
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-2">כללים פעילים:</p>
+              <p className="text-xs font-medium text-gray-500 mb-2">Active rules:</p>
               <div className="flex flex-wrap gap-2">
                 {rules.map(rule => (
                   <div key={rule.id}
@@ -189,7 +189,7 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
                       {categoryOptions.find(o => o.value === rule.category)?.label ?? rule.category}
                     </span>
                     <button onClick={() => deleteRule(rule.id)}
-                      className="text-gray-400 hover:text-rose-500 transition-colors text-sm leading-none" title="מחק כלל">
+                      className="text-gray-400 hover:text-rose-500 transition-colors text-sm leading-none" title="Delete rule">
                       ×
                     </button>
                   </div>
@@ -197,20 +197,20 @@ export default function RulesPanel({ accountId, month, onApplied, categoryOption
               </div>
             </div>
           ) : (
-            <p className="text-xs text-gray-400 text-center py-2">אין כללים עד��ין. הוסף את הראש��ן למעלה.</p>
+            <p className="text-xs text-gray-400 text-center py-2">No rules yet. Add the first one above.</p>
           )}
 
           {/* Apply */}
           <div className="flex items-center justify-between flex-wrap gap-3 pt-1 border-t border-gray-100">
-            <p className="text-xs text-gray-500">החל כללים על עסקאות לא מסווגות בחודש זה</p>
+            <p className="text-xs text-gray-500">Apply rules to uncategorized transactions this month</p>
             <button
               onClick={applyRules}
               disabled={applying || rules.length === 0}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-40 transition-colors"
             >
               {applying
-                ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />מחיל...</>
-                : '▶ החל כללים'}
+                ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />Applying...</>
+                : '▶ Apply Rules'}
             </button>
           </div>
 

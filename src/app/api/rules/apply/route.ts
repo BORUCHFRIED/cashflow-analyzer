@@ -43,6 +43,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ matched });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בהחלת כללים' }, { status: 500 });
+    return NextResponse.json({ error: 'Error applying rules' }, { status: 500 });
   }
 }

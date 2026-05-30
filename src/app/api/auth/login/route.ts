@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
       return res;
     }
 
-    return NextResponse.json({ error: 'שם משתמש או סיסמה שגויים' }, { status: 401 });
+    return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
   } catch {
-    return NextResponse.json({ error: 'שגיאת שרת' }, { status: 500 });
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

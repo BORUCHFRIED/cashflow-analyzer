@@ -7,7 +7,7 @@ export async function GET() {
     return NextResponse.json(rules);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בטעינת כללים' }, { status: 500 });
+    return NextResponse.json({ error: 'Error loading rules' }, { status: 500 });
   }
 }
 
@@ -16,10 +16,10 @@ export async function POST(req: NextRequest) {
     const { keyword, minAmount, maxAmount, category } = await req.json();
 
     if (!category) {
-      return NextResponse.json({ error: 'קטגוריה נדרשת' }, { status: 400 });
+      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
     }
     if (!keyword?.trim() && minAmount == null && maxAmount == null) {
-      return NextResponse.json({ error: 'נדרשת לפחות מילת מפתח או טווח סכום' }, { status: 400 });
+      return NextResponse.json({ error: 'At least a keyword or amount range is required' }, { status: 400 });
     }
 
     const rule = await prisma.categoryRule.create({
@@ -34,6 +34,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(rule);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בשמירת כלל' }, { status: 500 });
+    return NextResponse.json({ error: 'Error saving rule' }, { status: 500 });
   }
 }

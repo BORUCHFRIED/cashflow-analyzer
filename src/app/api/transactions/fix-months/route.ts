@@ -18,6 +18,6 @@ export async function POST() {
     return NextResponse.json({ total: all.length, fixed });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בתיקון חודשים' }, { status: 500 });
+    return NextResponse.json({ error: 'Error fixing months' }, { status: 500 });
   }
 }

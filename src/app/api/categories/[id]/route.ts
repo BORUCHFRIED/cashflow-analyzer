@@ -7,6 +7,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה במחיקת קטגוריה' }, { status: 500 });
+    return NextResponse.json({ error: 'Error deleting category' }, { status: 500 });
   }
 }

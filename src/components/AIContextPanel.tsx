@@ -39,10 +39,10 @@ export default function AIContextPanel() {
       >
         <div className="flex items-center gap-2">
           <span className="text-base">🧠</span>
-          <span className="text-sm font-semibold text-gray-700">הוראות קבועות ל-AI</span>
+          <span className="text-sm font-semibold text-gray-700">Persistent AI Instructions</span>
           {saved.trim() && (
             <span className="bg-emerald-100 text-emerald-700 text-xs font-medium px-2 py-0.5 rounded-full">
-              פעיל
+              Active
             </span>
           )}
         </div>
@@ -52,31 +52,31 @@ export default function AIContextPanel() {
       {open && (
         <div className="border-t border-gray-100 p-5 flex flex-col gap-3">
           <p className="text-xs text-gray-500 leading-relaxed">
-            כתוב כאן כל הקשר עסקי שה-AI צריך לדעת תמיד — כללי חשבונאות, מועדי תשלום, איך לסווג עסקאות מסוימות וכו׳.
-            ההוראות יוזנו אוטומטית לכל שיחה עם ה-AI.
+            Write any business context the AI should always know — accounting rules, payment schedules, how to classify certain transactions, etc.
+            These instructions will be automatically fed into every AI conversation.
           </p>
           <textarea
             value={instructions}
             onChange={e => onChange(e.target.value)}
             dir="auto"
             rows={7}
-            placeholder={`לדוגמה:
-• משכורות משולמות ב-5 לחודש הבא — הן שייכות לחודש הקודם כהוצאה
-• תשלומים לספק "כהן חומרים" הם תמיד עלות ייצור, לא הוצאות כלליות
-• הכנסה מ"פרויקט X" מחולקת שווה-בשווה על פני 3 חודשים
-• מע"מ משולם כל חודשיים — אל תחשב אותו כהוצאה חודשית רגילה`}
+            placeholder={`Examples:
+• Salaries paid on the 5th belong to the previous month as an expense
+• Payments to supplier "ABC Materials" are always production cost, not general expenses
+• Income from "Project X" is split evenly across 3 months
+• VAT is paid every 2 months — do not count it as a regular monthly expense`}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 resize-none leading-relaxed"
           />
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400">
-              {instructions.length} תווים
+              {instructions.length} characters
             </p>
             <button
               onClick={save}
               disabled={saving || !dirty}
               className="px-5 py-2 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 disabled:opacity-40 transition-colors"
             >
-              {saving ? 'שומר...' : dirty ? '💾 שמור הוראות' : '✓ שמור'}
+              {saving ? 'Saving...' : dirty ? '💾 Save Instructions' : '✓ Saved'}
             </button>
           </div>
         </div>

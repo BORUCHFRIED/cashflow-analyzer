@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     };
 
     if (!transactions?.length) {
-      return NextResponse.json({ error: 'אין עסקאות לסיווג' }, { status: 400 });
+      return NextResponse.json({ error: 'No transactions to classify' }, { status: 400 });
     }
 
     // Process in batches
@@ -73,6 +73,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ results: allResults });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בסיווג אוטומטי' }, { status: 500 });
+    return NextResponse.json({ error: 'Auto-classification error' }, { status: 500 });
   }
 }

@@ -83,7 +83,7 @@ export default function TransactionTable({
     setSelected(allSelected ? new Set() : new Set(visible.map(t => t.id)));
   }
   function handleDeleteSelected() {
-    if (!confirm(`האם למחוק ${selected.size} עסקאות?`)) return;
+    if (!confirm(`Delete ${selected.size} transactions?`)) return;
     onDeleteMany(Array.from(selected));
     setSelected(new Set());
   }
@@ -127,7 +127,7 @@ export default function TransactionTable({
   if (transactions.length === 0) {
     return (
       <div className="card p-8 text-center text-gray-400 text-sm">
-        אין עסקאות לחודש זה. העלה קובץ CSV או הדבק נתוני בנק.
+        No transactions for this month. Upload a CSV file or paste bank data.
       </div>
     );
   }
@@ -139,23 +139,23 @@ export default function TransactionTable({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
             <h3 className="text-sm font-semibold text-gray-700">
-              עסקאות ({visible.length}{visible.length !== transactions.length ? ` מתוך ${transactions.length}` : ''})
+              Transactions ({visible.length}{visible.length !== transactions.length ? ` of ${transactions.length}` : ''})
             </h3>
-            {someSelected && <span className="text-xs text-indigo-600 font-medium">{selected.size} נבחרו</span>}
+            {someSelected && <span className="text-xs text-indigo-600 font-medium">{selected.size} selected</span>}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {someSelected && (
               <button onClick={handleDeleteSelected}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white text-xs font-medium rounded-lg hover:bg-rose-700 transition-colors">
-                🗑️ מחק נבחרים ({selected.size})
+                🗑️ Delete selected ({selected.size})
               </button>
             )}
             {uncategorized > 0 && (
               <button onClick={onClassify} disabled={classifying}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                 {classifying
-                  ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />מסווג...</>
-                  : <>✨ סיווג אוטומטי ({uncategorized})</>}
+                  ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />Classifying...</>
+                  : <>✨ Auto Classify ({uncategorized})</>}
               </button>
             )}
           </div>
@@ -166,7 +166,7 @@ export default function TransactionTable({
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="🔍 חיפוש לפי תיאור או הערה..."
+            placeholder="🔍 Search by description or note..."
             dir="auto"
             className="flex-1 min-w-[180px] border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
@@ -175,14 +175,14 @@ export default function TransactionTable({
             onChange={e => setFilterCategory(e.target.value)}
             className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
           >
-            <option value="">כל הקטגוריות</option>
-            <option value="__none__">ללא קטגוריה</option>
+            <option value="">All Categories</option>
+            <option value="__none__">No category</option>
             {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           {(search || filterCategory) && (
             <button onClick={() => { setSearch(''); setFilterCategory(''); }}
               className="text-xs text-gray-400 hover:text-rose-500 px-2 transition-colors">
-              ✕ נקה
+              ✕ Clear
             </button>
           )}
         </div>
@@ -194,29 +194,29 @@ export default function TransactionTable({
             <tr className="bg-gray-50 text-xs text-gray-500 font-medium">
               <th className="px-3 py-3 w-10">
                 <input type="checkbox" checked={allSelected} onChange={toggleAll}
-                  className="w-4 h-4 rounded accent-indigo-600 cursor-pointer" title="בחר הכל" />
+                  className="w-4 h-4 rounded accent-indigo-600 cursor-pointer" title="Select all" />
               </th>
-              <th className="px-4 py-3 text-right cursor-pointer select-none hover:text-indigo-600"
+              <th className="px-4 py-3 text-left cursor-pointer select-none hover:text-indigo-600"
                 onClick={() => toggleSort('date')}>
-                תאריך {sortIcon('date')}
+                Date {sortIcon('date')}
               </th>
-              <th className="px-4 py-3 text-right">תיאור</th>
+              <th className="px-4 py-3 text-left">Description</th>
               <th className="px-4 py-3 text-left cursor-pointer select-none hover:text-indigo-600"
                 onClick={() => toggleSort('amount')}>
-                סכום {sortIcon('amount')}
+                Amount {sortIcon('amount')}
               </th>
-              <th className="px-4 py-3 text-right cursor-pointer select-none hover:text-indigo-600"
+              <th className="px-4 py-3 text-left cursor-pointer select-none hover:text-indigo-600"
                 onClick={() => toggleSort('category')}>
-                קטגוריה {sortIcon('category')}
+                Category {sortIcon('category')}
               </th>
-              <th className="px-4 py-3 text-center w-28">פעולות</th>
+              <th className="px-4 py-3 text-center w-28">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {visible.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-8 text-center text-gray-400 text-xs">
-                  לא נמצאו עסקאות התואמות את החיפוש
+                  No transactions match your search
                 </td>
               </tr>
             )}
@@ -242,7 +242,7 @@ export default function TransactionTable({
                             className="border border-gray-300 rounded-md px-2 py-1 text-xs w-full min-w-[160px]" dir="auto" />
                           <input value={editState.notes}
                             onChange={e => setEditState(s => ({ ...s, notes: e.target.value }))}
-                            placeholder="הערה (אופציונלי)"
+                            placeholder="Note (optional)"
                             className="border border-gray-200 rounded-md px-2 py-1 text-xs w-full text-gray-500" dir="auto" />
                         </div>
                       </td>
@@ -255,16 +255,16 @@ export default function TransactionTable({
                         <select value={editState.category}
                           onChange={e => setEditState(s => ({ ...s, category: e.target.value }))}
                           className="border border-gray-300 rounded-md px-2 py-1 text-xs">
-                          <option value="">ללא קטגוריה</option>
+                          <option value="">No category</option>
                           {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                       </td>
                       <td className="px-4 py-2">
                         <div className="flex gap-1 justify-center">
                           <button onClick={() => saveEdit(t.id)}
-                            className="px-2 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600">שמור</button>
+                            className="px-2 py-1 bg-emerald-500 text-white text-xs rounded hover:bg-emerald-600">Save</button>
                           <button onClick={() => setEditingId(null)}
-                            className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300">ביטול</button>
+                            className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300">Cancel</button>
                         </div>
                       </td>
                     </>
@@ -287,17 +287,17 @@ export default function TransactionTable({
                       <td className="px-4 py-2.5">
                         {t.category
                           ? <span className="inline-block bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full">{categoryOptions.find(o => o.value === t.category)?.label ?? t.category}</span>
-                          : <span className="inline-block bg-amber-50 text-amber-600 text-xs px-2 py-0.5 rounded-full">לא מסווג</span>}
+                          : <span className="inline-block bg-amber-50 text-amber-600 text-xs px-2 py-0.5 rounded-full">Uncategorized</span>}
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex gap-1 justify-center">
                           <button onClick={() => openQuickNote(t)}
                             className={`p-1.5 rounded transition-colors ${t.notes ? 'text-amber-500 hover:bg-amber-50' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
-                            title="הוסף הערה">📝</button>
+                            title="Add note">📝</button>
                           <button onClick={() => startEdit(t)}
-                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="ערוך">✏️</button>
+                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="Edit">✏️</button>
                           <button onClick={() => onDelete(t.id)}
-                            className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors" title="מחק">🗑️</button>
+                            className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors" title="Delete">🗑️</button>
                         </div>
                       </td>
                     </>
@@ -308,20 +308,19 @@ export default function TransactionTable({
                   <tr key={`note-${t.id}`} className="bg-amber-50">
                     <td colSpan={6} className="px-5 py-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-amber-700 font-medium whitespace-nowrap">📝 הערה:</span>
+                        <span className="text-xs text-amber-700 font-medium whitespace-nowrap">📝 Note:</span>
                         <input
                           value={quickNoteText}
                           onChange={e => setQuickNoteText(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && saveQuickNote(t.id)}
-                          placeholder="הוסף הערה לעסקה זו..."
+                          placeholder="Add a note for this transaction..."
                           autoFocus
-                          dir="auto"
                           className="flex-1 border border-amber-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
                         />
                         <button onClick={() => saveQuickNote(t.id)}
-                          className="px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600">שמור</button>
+                          className="px-3 py-1.5 bg-amber-500 text-white text-xs rounded-lg hover:bg-amber-600">Save</button>
                         <button onClick={() => setQuickNoteId(null)}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg hover:bg-gray-200">ביטול</button>
+                          className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg hover:bg-gray-200">Cancel</button>
                       </div>
                     </td>
                   </tr>

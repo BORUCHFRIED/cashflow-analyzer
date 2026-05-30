@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ rates, isCustom: rates.length > 0 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בקריאת שערי חליפין' }, { status: 500 });
+    return NextResponse.json({ error: 'Error reading exchange rates' }, { status: 500 });
   }
 }
 
@@ -48,6 +48,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(rates);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בעדכון שערי חליפין' }, { status: 500 });
+    return NextResponse.json({ error: 'Error updating exchange rates' }, { status: 500 });
   }
 }

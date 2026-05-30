@@ -25,7 +25,7 @@ export default function CategoriesManager({ options, custom, addCategory, delete
     if (result.ok) {
       setNewName('');
     } else {
-      setError(result.error ?? 'שגיאה');
+      setError(result.error ?? 'Error');
     }
   }
 
@@ -37,10 +37,10 @@ export default function CategoriesManager({ options, custom, addCategory, delete
       >
         <div className="flex items-center gap-2">
           <span className="text-base">🏷️</span>
-          <span className="text-sm font-semibold text-gray-700">ניהול קטגוריות</span>
+          <span className="text-sm font-semibold text-gray-700">Manage Categories</span>
           {custom.length > 0 && (
             <span className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-0.5 rounded-full">
-              {custom.length} מותאמות אישית
+              {custom.length} custom
             </span>
           )}
         </div>
@@ -52,13 +52,13 @@ export default function CategoriesManager({ options, custom, addCategory, delete
 
           {/* Add new category */}
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium text-gray-500">הוסף קטגוריה חדשה</p>
+            <p className="text-xs font-medium text-gray-500">Add New Category</p>
             <div className="flex gap-2">
               <input
                 value={newName}
                 onChange={e => { setNewName(e.target.value); setError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handleAdd()}
-                placeholder="שם קטגוריה (לדוג׳: דלק ונסיעות, ביגוד)"
+                placeholder="Category name (e.g. Travel & Fuel, Clothing)"
                 dir="auto"
                 className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
               />
@@ -67,7 +67,7 @@ export default function CategoriesManager({ options, custom, addCategory, delete
                 disabled={!newName.trim() || saving}
                 className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-xl hover:bg-purple-700 disabled:opacity-40 transition-colors whitespace-nowrap"
               >
-                {saving ? '...' : '+ הוסף'}
+                {saving ? '...' : '+ Add'}
               </button>
             </div>
             {error && <p className="text-xs text-rose-600">{error}</p>}
@@ -75,7 +75,7 @@ export default function CategoriesManager({ options, custom, addCategory, delete
 
           {/* Built-in categories (read-only) */}
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">קטגוריות מובנות:</p>
+            <p className="text-xs font-medium text-gray-500 mb-2">Built-in Categories:</p>
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(CATEGORY_LABELS)
                 .filter(([k]) => k !== '')
@@ -91,7 +91,7 @@ export default function CategoriesManager({ options, custom, addCategory, delete
           {/* Custom categories */}
           {custom.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-2">קטגוריות מותאמות אישית:</p>
+              <p className="text-xs font-medium text-gray-500 mb-2">Custom Categories:</p>
               <div className="flex flex-wrap gap-2">
                 {custom.map(c => (
                   <div key={c.id}
@@ -100,7 +100,7 @@ export default function CategoriesManager({ options, custom, addCategory, delete
                     <button
                       onClick={() => deleteCategory(c.id)}
                       className="text-purple-400 hover:text-rose-500 transition-colors leading-none font-bold"
-                      title="מחק קטגוריה"
+                      title="Delete category"
                     >
                       ×
                     </button>
@@ -108,21 +108,21 @@ export default function CategoriesManager({ options, custom, addCategory, delete
                 ))}
               </div>
               <p className="text-xs text-gray-400 mt-2">
-                * מחיקת קטגוריה לא תשנה עסקאות שכבר סווגו בה
+                * Deleting a category will not change transactions already classified under it
               </p>
             </div>
           )}
 
           {custom.length === 0 && (
             <p className="text-xs text-gray-400 text-center py-1">
-              אין קטגוריות מותאמות אישית עדיין
+              No custom categories yet
             </p>
           )}
 
           {/* Full merged list preview */}
           <div className="bg-gray-50 rounded-xl p-3">
             <p className="text-xs font-medium text-gray-500 mb-2">
-              כל הקטגוריות הזמינות ({options.length}):
+              All Available Categories ({options.length}):
             </p>
             <p className="text-xs text-gray-500 leading-relaxed">
               {options.map(o => o.label).join(' · ')}

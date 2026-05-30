@@ -21,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ ...updated, date: updated.date.toISOString() });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בעדכון עסקה' }, { status: 500 });
+    return NextResponse.json({ error: 'Error updating transaction' }, { status: 500 });
   }
 }
 
@@ -31,6 +31,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה במחיקת עסקה' }, { status: 500 });
+    return NextResponse.json({ error: 'Error deleting transaction' }, { status: 500 });
   }
 }

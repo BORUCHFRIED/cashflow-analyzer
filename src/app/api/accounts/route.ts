@@ -37,6 +37,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(accounts);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאת שרת פנימית' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

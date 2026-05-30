@@ -25,18 +25,18 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<string, string> = {
-  'Staff & Salaries': 'שכר ועובדים',
-  'Rent & Office': 'שכירות ומשרד',
-  'Marketing & Ads': 'שיווק ופרסום',
-  'Suppliers & Materials': 'ספקים וחומרים',
-  'Infrastructure & Software': 'תשתיות ותוכנה',
-  'Sales Revenue': 'הכנסות ממכירות',
-  'Service Revenue': 'הכנסות משירותים',
-  'Loans & Finance': 'הלוואות ומימון',
-  'Taxes & Compliance': 'מסים ורגולציה',
-  'General Expenses': 'הוצאות כלליות',
-  'Other': 'אחר',
-  '': 'ללא קטגוריה',
+  'Staff & Salaries': 'Staff & Salaries',
+  'Rent & Office': 'Rent & Office',
+  'Marketing & Ads': 'Marketing & Ads',
+  'Suppliers & Materials': 'Suppliers & Materials',
+  'Infrastructure & Software': 'Infrastructure & Software',
+  'Sales Revenue': 'Sales Revenue',
+  'Service Revenue': 'Service Revenue',
+  'Loans & Finance': 'Loans & Finance',
+  'Taxes & Compliance': 'Taxes & Compliance',
+  'General Expenses': 'General Expenses',
+  'Other': 'Other',
+  '': 'No Category',
 };
 
 export interface Transaction {

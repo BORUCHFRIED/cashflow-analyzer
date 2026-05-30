@@ -8,7 +8,7 @@ const dateFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: '2-digi
 
 function monthLabel(month: string): string {
   const [y, m] = month.split('-').map(Number);
-  const names = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   return `${names[m - 1]} ${y}`;
 }
 
@@ -59,9 +59,9 @@ function currencySection(
 
   const txLines = currentTx.length
     ? currentTx.map(t =>
-        `    ${dateFmt.format(t.date)} | ${t.description} | ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)} | ${CATEGORY_LABELS[t.category] || t.category || 'לא מסווג'}`
+        `    ${dateFmt.format(t.date)} | ${t.description} | ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)} | ${CATEGORY_LABELS[t.category] || t.category || 'Uncategorized'}`
       ).join('\n')
-    : '    (אין עסקאות בחודש זה)';
+    : '    (No transactions this month)';
 
   const history = Array.from(byMonth.keys()).sort()
     .filter(m => m !== focusMonth)
@@ -70,22 +70,22 @@ function currencySection(
       const { income: hi, expenses: he, net: hn } = summarise(mtxs);
       const top = topN(mtxs, 5);
       const topStr = top.map(t => `      • ${t.description}: ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)}`).join('\n');
-      return `    ${monthLabel(m)} (${mtxs.length} עסקאות): הכנסות ${hi.toFixed(2)} | הוצאות ${he.toFixed(2)} | נטו ${hn.toFixed(2)}\n${topStr}`;
+      return `    ${monthLabel(m)} (${mtxs.length} transactions): Income ${hi.toFixed(2)} | Expenses ${he.toFixed(2)} | Net ${hn.toFixed(2)}\n${topStr}`;
     }).join('\n');
 
-  const marker = isCurrent ? ' ◄ החשבון הנוכחי' : '';
-  return `══ חשבון ${cur}${marker} ══
-  ${monthLabel(focusMonth)}: הכנסות ${income.toFixed(2)} ${cur} | הוצאות ${expenses.toFixed(2)} ${cur} | נטו ${net.toFixed(2)} ${cur} | עסקאות: ${currentTx.length}
-  עסקאות מלאות:
+  const marker = isCurrent ? ' ◄ Current account' : '';
+  return `══ Account ${cur}${marker} ══
+  ${monthLabel(focusMonth)}: Income ${income.toFixed(2)} ${cur} | Expenses ${expenses.toFixed(2)} ${cur} | Net ${net.toFixed(2)} ${cur} | Transactions: ${currentTx.length}
+  Full transactions:
 ${txLines}
-  היסטוריה:
-${history || '    אין נתונים היסטוריים'}`;
+  History:
+${history || '    No historical data'}`;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { currency, month, messages } = await req.json();
-    if (!currency || !month) return new Response('נתונים חסרים', { status: 400 });
+    if (!currency || !month) return new Response('Missing parameters', { status: 400 });
 
     // Single query: all accounts + transactions + custom categories + AI context
     const [accounts, customCats, aiCtx] = await Promise.all([
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     const totalTx = accounts.reduce((s, a) => s + a.transactions.length, 0);
     if (totalTx === 0) {
       return new Response(
-        new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode('אין עסקאות לניתוח.')); c.close(); } }),
+        new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode('No transactions to analyse.')); c.close(); } }),
         { headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
       );
     }
@@ -118,16 +118,16 @@ export async function POST(req: NextRequest) {
     }).join('\n\n');
 
     const viewingNote = currency === 'CONSOLIDATED'
-      ? 'תצוגה מאוחדת (כל המטבעות)'
-      : `צופה כרגע בחשבון ${currency}`;
+      ? 'Consolidated view (all currencies)'
+      : `Currently viewing account ${currency}`;
 
-    const systemPrompt = `אתה אנליסט פיננסי מנוסה עם גישה מלאה לכל החשבונות של העסק.
-השב תמיד בעברית, בצורה ברורה וישירה.
-${viewingNote} — חודש: ${monthLabel(month)}
+    const systemPrompt = `You are an experienced financial analyst with full access to all the business accounts.
+Always respond in English, clearly and directly.
+${viewingNote} — Month: ${monthLabel(month)}
 
-כל הקטגוריות הזמינות: ${allCategoryNames.join(' | ')}
-${businessInstructions ? `\n══ הוראות עסקיות קבועות ══\n${businessInstructions}\n` : ''}
-יש לך גישה לנתונים של כל המטבעות — GBP, ILS, USD — כולל עסקאות מלאות והיסטוריה.
+All available categories: ${allCategoryNames.join(' | ')}
+${businessInstructions ? `\n══ Persistent Business Instructions ══\n${businessInstructions}\n` : ''}
+You have access to data for all currencies — GBP, ILS, USD — including full transactions and history.
 
 ${sections}`;
 
@@ -155,6 +155,6 @@ ${sections}`;
     return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   } catch (err) {
     console.error(err);
-    return new Response('שגיאה בניתוח AI', { status: 500 });
+    return new Response('AI analysis error', { status: 500 });
   }
 }

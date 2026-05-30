@@ -49,7 +49,7 @@ export default function ConsolidatedView({ month }: Props) {
         USD_ILS: rateMap.USD_ILS ?? '3.73',
       });
     } catch {
-      setError('שגיאה בטעינת נתונים מאוחדים');
+      setError('Error loading consolidated data');
     } finally {
       setLoading(false);
     }
@@ -81,7 +81,7 @@ export default function ConsolidatedView({ month }: Props) {
       <div className="flex items-center justify-center py-24">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-gray-500">טוען נתונים מאוחדים...</span>
+          <span className="text-sm text-gray-500">Loading consolidated data...</span>
         </div>
       </div>
     );
@@ -92,7 +92,7 @@ export default function ConsolidatedView({ month }: Props) {
       <div className="bg-rose-50 rounded-xl p-6 text-center text-rose-700">
         <p>{error}</p>
         <button onClick={fetchAll} className="mt-3 px-4 py-1.5 bg-rose-600 text-white text-sm rounded-lg">
-          נסה שוב
+          Try again
         </button>
       </div>
     );
@@ -120,22 +120,22 @@ export default function ConsolidatedView({ month }: Props) {
 
   const chartData = perCurrency.map(c => ({
     name: c.cur,
-    'הכנסות': Math.round(c.incomeILS),
-    'הוצאות': Math.round(c.expensesILS),
+    'Income': Math.round(c.incomeILS),
+    'Expenses': Math.round(c.expensesILS),
   }));
 
   return (
     <div className="flex flex-col gap-5">
-      <h2 className="text-lg font-semibold text-gray-700">תצוגה מאוחדת — כל המטבעות ב-ILS</h2>
+      <h2 className="text-lg font-semibold text-gray-700">Consolidated View — All Currencies in ILS</h2>
 
       {/* Exchange rates */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-gray-700">שערי חליפין</h3>
+            <h3 className="text-sm font-semibold text-gray-700">Exchange Rates</h3>
             {ratesCustom
-              ? <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">✓ מוגדר לחודש זה</span>
-              : <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">ברירת מחדל — לא הוגדר לחודש זה</span>
+              ? <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">✓ Set for this month</span>
+              : <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Default — Not set for this month</span>
             }
           </div>
           {!editingRates ? (
@@ -143,7 +143,7 @@ export default function ConsolidatedView({ month }: Props) {
               onClick={() => setEditingRates(true)}
               className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
             >
-              ✏️ ערוך
+              ✏️ Edit
             </button>
           ) : (
             <div className="flex gap-2">
@@ -152,13 +152,13 @@ export default function ConsolidatedView({ month }: Props) {
                 disabled={savingRates}
                 className="text-xs bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
               >
-                {savingRates ? 'שומר...' : 'שמור'}
+                {savingRates ? 'Saving...' : 'Save'}
               </button>
               <button
                 onClick={() => setEditingRates(false)}
                 className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-200"
               >
-                ביטול
+                Cancel
               </button>
             </div>
           )}
@@ -190,15 +190,15 @@ export default function ConsolidatedView({ month }: Props) {
       {/* Combined totals */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'סה״כ הכנסות (ILS)', value: formatCurrency(totalIncomeILS, 'ILS'), color: 'text-emerald-600', icon: '📈' },
-          { label: 'סה״כ הוצאות (ILS)', value: formatCurrency(totalExpensesILS, 'ILS'), color: 'text-rose-600', icon: '📉' },
+          { label: 'Total Income (ILS)', value: formatCurrency(totalIncomeILS, 'ILS'), color: 'text-emerald-600', icon: '📈' },
+          { label: 'Total Expenses (ILS)', value: formatCurrency(totalExpensesILS, 'ILS'), color: 'text-rose-600', icon: '📉' },
           {
-            label: 'תזרים נטו (ILS)',
+            label: 'Net Cash Flow (ILS)',
             value: `${totalNetILS >= 0 ? '+' : ''}${formatCurrency(totalNetILS, 'ILS')}`,
             color: totalNetILS >= 0 ? 'text-indigo-600' : 'text-rose-600',
             icon: totalNetILS >= 0 ? '✅' : '⚠️',
           },
-          { label: 'שולי רווח כולל', value: `${totalMargin.toFixed(1)}%`, color: totalMargin >= 20 ? 'text-emerald-600' : totalMargin >= 0 ? 'text-amber-500' : 'text-rose-600', icon: '💹' },
+          { label: 'Overall Profit Margin', value: `${totalMargin.toFixed(1)}%`, color: totalMargin >= 20 ? 'text-emerald-600' : totalMargin >= 0 ? 'text-amber-500' : 'text-rose-600', icon: '💹' },
         ].map(c => (
           <div key={c.label} className="card p-5 flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -222,19 +222,19 @@ export default function ConsolidatedView({ month }: Props) {
             </div>
             <div className="space-y-1.5 text-xs text-gray-600">
               <div className="flex justify-between">
-                <span>הכנסות ({c.cur})</span>
+                <span>Income ({c.cur})</span>
                 <span className="text-emerald-600 font-medium">
                   {c.symbol}{c.metrics.totalIncome.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>הוצאות ({c.cur})</span>
+                <span>Expenses ({c.cur})</span>
                 <span className="text-rose-600 font-medium">
                   {c.symbol}{c.metrics.totalExpenses.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between border-t border-gray-100 pt-1.5 mt-1">
-                <span>שווי ILS</span>
+                <span>ILS Value</span>
                 <span className="text-indigo-600 font-semibold">
                   ₪{Math.round(c.incomeILS).toLocaleString()} / ₪{Math.round(c.expensesILS).toLocaleString()}
                 </span>
@@ -246,7 +246,7 @@ export default function ConsolidatedView({ month }: Props) {
 
       {/* Comparison chart */}
       <div className="card p-5">
-        <h3 className="text-sm font-semibold text-gray-600 mb-4">השוואת מטבעות (שווי ILS)</h3>
+        <h3 className="text-sm font-semibold text-gray-600 mb-4">Currency Comparison (ILS Value)</h3>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={chartData} margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -254,11 +254,11 @@ export default function ConsolidatedView({ month }: Props) {
             <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={v => `₪${(v/1000).toFixed(0)}K`} width={64} />
             <Tooltip
               formatter={(value: number) => [`₪${value.toLocaleString()}`, '']}
-              contentStyle={{ fontFamily: 'inherit', direction: 'rtl' }}
+              contentStyle={{ fontFamily: 'inherit' }}
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="הכנסות" fill="#10b981" radius={[4,4,0,0]} />
-            <Bar dataKey="הוצאות" fill="#f43f5e" radius={[4,4,0,0]} />
+            <Bar dataKey="Income" fill="#10b981" radius={[4,4,0,0]} />
+            <Bar dataKey="Expenses" fill="#f43f5e" radius={[4,4,0,0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

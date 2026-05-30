@@ -38,11 +38,11 @@ export default function AccountView({ currency, month }: Props) {
     setError('');
     try {
       const res = await fetch(`/api/accounts?currency=${currency}&month=${month}`);
-      if (!res.ok) throw new Error('שגיאה בטעינת נתונים');
+      if (!res.ok) throw new Error('Error loading data');
       const data = await res.json();
       setAccount(data);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'שגיאה לא ידועה');
+      setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ export default function AccountView({ currency, month }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('האם למחוק עסקה זו?')) return;
+    if (!confirm('Delete this transaction?')) return;
     const removed = account?.transactions.find(t => t.id === id);
     try {
       await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
@@ -84,7 +84,7 @@ export default function AccountView({ currency, month }: Props) {
         transactions: prev.transactions.filter(t => t.id !== id),
       } : prev);
       if (removed) {
-        setUndoState({ transactions: [removed], label: 'נמחקה עסקה אחת' });
+        setUndoState({ transactions: [removed], label: '1 transaction deleted' });
         scheduleUndoClear();
       }
     } catch { /* silent */ }
@@ -99,7 +99,7 @@ export default function AccountView({ currency, month }: Props) {
         transactions: prev.transactions.filter(t => !ids.includes(t.id)),
       } : prev);
       if (removed.length) {
-        setUndoState({ transactions: removed, label: `נמחקו ${removed.length} עסקאות` });
+        setUndoState({ transactions: removed, label: `${removed.length} transactions deleted` });
         scheduleUndoClear();
       }
     } catch { /* silent */ }
@@ -158,7 +158,7 @@ export default function AccountView({ currency, month }: Props) {
 
   async function handleClearMonth() {
     if (!account) return;
-    if (!confirm(`האם למחוק את כל ${transactions.length} העסקאות של חודש זה? פעולה זו אינה הפיכה.`)) return;
+    if (!confirm(`Delete all ${transactions.length} transactions for this month? This action cannot be undone.`)) return;
     try {
       await fetch(`/api/transactions/clear?accountId=${account.id}&month=${month}`, { method: 'DELETE' });
       fetchAccount();
@@ -218,10 +218,10 @@ export default function AccountView({ currency, month }: Props) {
   if (error) {
     return (
       <div className="bg-rose-50 border border-rose-200 rounded-xl p-6 text-center text-rose-700">
-        <p className="font-medium">שגיאה בטעינת נתונים</p>
+        <p className="font-medium">Error loading data</p>
         <p className="text-sm mt-1">{error}</p>
         <button onClick={fetchAccount} className="mt-3 px-4 py-1.5 bg-rose-600 text-white text-sm rounded-lg hover:bg-rose-700">
-          נסה שוב
+          Try again
         </button>
       </div>
     );
@@ -235,35 +235,35 @@ export default function AccountView({ currency, month }: Props) {
       {/* Action bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-lg font-semibold text-gray-700">
-          חשבון {currency} — {transactions.length} עסקאות
+          {currency} Account — {transactions.length} transactions
         </h2>
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setShowUpload(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors"
           >
-            📤 העלאת עסקאות
+            📤 Upload Transactions
           </button>
           <button
             onClick={() => exportToCSV(transactions, currency, month)}
             disabled={transactions.length === 0}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors"
           >
-            ⬇️ ייצוא CSV
+            ⬇️ Export CSV
           </button>
           <button
             onClick={handleClearMonth}
             disabled={transactions.length === 0}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-rose-200 text-rose-600 text-sm font-medium rounded-xl hover:bg-rose-50 disabled:opacity-40 transition-colors"
           >
-            🗑️ נקה חודש
+            🗑️ Clear Month
           </button>
           <button
             onClick={handleExportPDF}
             disabled={transactions.length === 0}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors"
           >
-            📄 ייצוא PDF
+            📄 Export PDF
           </button>
         </div>
       </div>
@@ -318,7 +318,7 @@ export default function AccountView({ currency, month }: Props) {
             onClick={handleUndo}
             className="font-bold text-indigo-300 hover:text-indigo-100 underline underline-offset-2"
           >
-            ביטול מחיקה ↩
+            Undo ↩
           </button>
           <button
             onClick={() => { setUndoState(null); if (undoTimer.current) clearTimeout(undoTimer.current); }}

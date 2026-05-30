@@ -58,9 +58,9 @@ export default function MetricsCards({ metrics, currency }: Props) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
-        label="סה״כ הכנסות"
+        label="Total Income"
         value={formatCurrency(totalIncome, currency)}
-        sub="הכנסה ברוטו"
+        sub="Gross Income"
         trend="neutral"
         Icon={TrendingUp}
         iconBg="bg-emerald-50 dark:bg-emerald-900/30"
@@ -68,9 +68,9 @@ export default function MetricsCards({ metrics, currency }: Props) {
         valueColor="text-emerald-600"
       />
       <MetricCard
-        label="סה״כ הוצאות"
+        label="Total Expenses"
         value={formatCurrency(totalExpenses, currency)}
-        sub="הוצאה כוללת"
+        sub="Total Outgoings"
         trend="neutral"
         Icon={TrendingDown}
         iconBg="bg-rose-50 dark:bg-rose-900/30"
@@ -78,19 +78,19 @@ export default function MetricsCards({ metrics, currency }: Props) {
         valueColor="text-rose-600"
       />
       <MetricCard
-        label="תזרים נטו"
+        label="Net Cash Flow"
         value={`${netCashflow >= 0 ? '+' : ''}${formatCurrency(netCashflow, currency)}`}
         trend={netCashflow >= 0 ? 'neutral' : 'neutral'}
-        sub={netCashflow >= 0 ? 'חיובי' : 'שלילי'}
+        sub={netCashflow >= 0 ? 'Positive' : 'Negative'}
         Icon={netCashflow >= 0 ? ArrowUpRight : ArrowDownRight}
         iconBg={netCashflow >= 0 ? 'bg-brand-50 dark:bg-brand-900/30' : 'bg-rose-50 dark:bg-rose-900/30'}
         iconColor={netCashflow >= 0 ? 'text-brand-600' : 'text-rose-600'}
         valueColor={netCashflow >= 0 ? 'text-brand-600' : 'text-rose-600'}
       />
       <MetricCard
-        label="שולי רווח"
+        label="Profit Margin"
         value={`${profitMargin.toFixed(1)}%`}
-        sub={profitMargin >= 20 ? 'בריא' : profitMargin >= 0 ? 'גבולי' : 'הפסד'}
+        sub={profitMargin >= 20 ? 'Healthy' : profitMargin >= 0 ? 'Marginal' : 'Loss'}
         trend={marginStatus}
         Icon={Percent}
         iconBg={profitMargin >= 20 ? 'bg-emerald-50 dark:bg-emerald-900/30' : profitMargin >= 0 ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-rose-50 dark:bg-rose-900/30'}

@@ -132,14 +132,6 @@
 }
 
 /* ── Inputs & forms ──────────────────────────────────────────── */
-input[type="number"],
-input[type="date"],
-.ltr-field {
-  direction: ltr;
-  text-align: left;
-}
-
-.date-input { direction: ltr; }
 
 /* ── Chat / streaming ────────────────────────────────────────── */
 .streaming-text {

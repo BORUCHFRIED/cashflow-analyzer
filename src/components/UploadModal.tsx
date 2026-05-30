@@ -45,12 +45,12 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
     try {
       const rows = parseCSV(text);
       if (rows.length === 0) {
-        setParseError('לא זוהו שורות תקינות. פורמט: תאריך, תיאור, סכום');
+        setParseError('No valid rows detected. Format: date, description, amount');
         return;
       }
       setRawPreview(rows);
     } catch {
-      setParseError('שגיאה בניתוח הנתונים');
+      setParseError('Error parsing data');
     }
   }
 
@@ -78,23 +78,23 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? 'שגיאה בשמירת עסקאות');
+        setError(data.error ?? 'Error saving transactions');
         return;
       }
       onSuccess();
       onClose();
     } catch {
-      setError('שגיאת חיבור לשרת');
+      setError('Connection error');
     } finally {
       setLoading(false);
     }
   }
 
   const MODES: { key: AmountMode; label: string; desc: string }[] = [
-    { key: 'auto',         label: 'אוטומטי',       desc: 'שמור סכומים כפי שהם (+ הכנסה, - הוצאה)' },
-    { key: 'all-expenses', label: 'כולן הוצאות',    desc: 'כל הסכומים הן הוצאות (יהפכו לשליליים)' },
-    { key: 'all-income',   label: 'כולן הכנסות',    desc: 'כל הסכומים הן הכנסות (יהפכו לחיוביים)' },
-    { key: 'flip',         label: 'הפוך סימנים',    desc: 'הפוך + ל- ו- ל+' },
+    { key: 'auto',         label: 'Auto',         desc: 'Keep amounts as-is (+ income, - expense)' },
+    { key: 'all-expenses', label: 'All expenses', desc: 'All amounts are expenses (will become negative)' },
+    { key: 'all-income',   label: 'All income',   desc: 'All amounts are income (will become positive)' },
+    { key: 'flip',         label: 'Flip signs',   desc: 'Flip + to - and - to +' },
   ];
 
   return (
@@ -105,7 +105,7 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">
-            העלאת עסקאות — {currency}
+            Upload Transactions — {currency}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
         </div>
@@ -120,16 +120,16 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
                   ${tab === t ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
-                {t === 'paste' ? '📋 הדבק נתונים' : '📁 העלאת קובץ'}
+                {t === 'paste' ? '📋 Paste Data' : '📁 Upload File'}
               </button>
             ))}
           </div>
 
           {/* Format hint */}
           <div className="bg-blue-50 rounded-lg p-3 text-xs text-blue-700">
-            <strong>פורמט:</strong> תאריך, תיאור, סכום — מופרד בפסיקים<br />
-            <span className="font-mono text-blue-500">01/03/2026, שכירות, 2100</span><br />
-            <span className="font-mono text-blue-500">05/03/2026, תשלום לקוח, 8500</span>
+            <strong>Format:</strong> date, description, amount — comma separated<br />
+            <span className="font-mono text-blue-500">01/03/2026, Rent, 2100</span><br />
+            <span className="font-mono text-blue-500">05/03/2026, Client payment, 8500</span>
           </div>
 
           {tab === 'paste' ? (
@@ -137,7 +137,7 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
               <textarea
                 value={pasteText}
                 onChange={e => { setPasteText(e.target.value); setRawPreview([]); }}
-                placeholder="הדבק נתוני בנק כאן..."
+                placeholder="Paste bank data here..."
                 className="border border-gray-300 rounded-xl p-3 text-sm font-mono h-40 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 dir="ltr"
               />
@@ -146,7 +146,7 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
                 disabled={!pasteText.trim()}
                 className="self-start px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-800 disabled:opacity-40"
               >
-                נתח נתונים
+                Parse Data
               </button>
             </div>
           ) : (
@@ -168,13 +168,13 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
           {/* Amount mode selector — shown once we have parsed rows */}
           {rawPreview.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col gap-3">
-              <p className="text-sm font-semibold text-amber-800">סוג הסכומים בקובץ:</p>
+              <p className="text-sm font-semibold text-amber-800">Amount type in file:</p>
               <div className="grid grid-cols-2 gap-2">
                 {MODES.map(m => (
                   <button
                     key={m.key}
                     onClick={() => setAmountMode(m.key)}
-                    className={`text-right px-3 py-2 rounded-lg border text-xs transition-colors
+                    className={`text-left px-3 py-2 rounded-lg border text-xs transition-colors
                       ${amountMode === m.key
                         ? 'bg-amber-500 border-amber-500 text-white'
                         : 'bg-white border-amber-200 text-amber-800 hover:bg-amber-100'
@@ -194,24 +194,24 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
           {preview.length > 0 && (
             <div>
               <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                תצוגה מקדימה — {preview.length} עסקאות
+                Preview — {preview.length} transactions
               </h4>
               <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                 <table className="w-full text-xs">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-2 text-right text-gray-500">תאריך</th>
-                      <th className="px-3 py-2 text-right text-gray-500">תיאור</th>
-                      <th className="px-3 py-2 text-left text-gray-500">סכום</th>
+                      <th className="px-3 py-2 text-left text-gray-500">Date</th>
+                      <th className="px-3 py-2 text-left text-gray-500">Description</th>
+                      <th className="px-3 py-2 text-left text-gray-500">Amount</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {preview.slice(0, 20).map((row, i) => (
                       <tr key={i}>
-                        <td className="px-3 py-1.5 text-gray-600 font-mono" dir="ltr">
-                          {new Date(row.date).toLocaleDateString('he-IL')}
+                        <td className="px-3 py-1.5 text-gray-600 font-mono">
+                          {new Date(row.date).toLocaleDateString('en-GB')}
                         </td>
-                        <td className="px-3 py-1.5 text-gray-800" dir="auto">{row.description}</td>
+                        <td className="px-3 py-1.5 text-gray-800">{row.description}</td>
                         <td className={`px-3 py-1.5 font-medium font-mono text-left ${row.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {row.amount >= 0 ? '+' : ''}{row.amount}
                         </td>
@@ -221,7 +221,7 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
                 </table>
               </div>
               {preview.length > 20 && (
-                <p className="text-xs text-gray-400 mt-1">...ועוד {preview.length - 20} עסקאות</p>
+                <p className="text-xs text-gray-400 mt-1">...and {preview.length - 20} more transactions</p>
               )}
             </div>
           )}
@@ -232,14 +232,14 @@ export default function UploadModal({ currency, month, onClose, onSuccess }: Pro
 
           <div className="flex gap-3 justify-end pt-2">
             <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
-              ביטול
+              Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={preview.length === 0 || loading}
               className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {loading ? 'שומר...' : `שמור ${preview.length} עסקאות`}
+              {loading ? 'Saving...' : `Save ${preview.length} transactions`}
             </button>
           </div>
         </div>

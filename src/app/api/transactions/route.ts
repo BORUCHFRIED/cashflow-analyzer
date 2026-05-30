@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     };
 
     if (!currency || !transactions?.length) {
-      return NextResponse.json({ error: 'נתונים חסרים' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing data' }, { status: 400 });
     }
 
     // Ensure account exists
@@ -43,6 +43,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה בשמירת עסקאות' }, { status: 500 });
+    return NextResponse.json({ error: 'Error saving transactions' }, { status: 500 });
   }
 }

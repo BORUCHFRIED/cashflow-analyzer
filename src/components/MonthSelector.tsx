@@ -18,15 +18,14 @@ export default function MonthSelector({ month, onChange, dark }: Props) {
 
   return (
     <div className={`flex items-center gap-1 ${dark ? '' : 'bg-white dark:bg-slate-800 rounded-xl px-3 py-2 border border-gray-100 dark:border-slate-700 shadow-card'}`}>
-      {/* In RTL, ChevronRight = go to NEXT month (forward in time, displayed on left visually) */}
-      <button onClick={() => onChange(nextMonth(month))} className={btnClass} title="חודש הבא">
-        <ChevronRight size={16} />
+      <button onClick={() => onChange(prevMonth(month))} className={btnClass} title="Previous month">
+        <ChevronLeft size={16} />
       </button>
       <span className={textClass} style={dark ? {} : { color: 'var(--text-primary)' }}>
         {monthLabel(month)}
       </span>
-      <button onClick={() => onChange(prevMonth(month))} className={btnClass} title="חודש קודם">
-        <ChevronLeft size={16} />
+      <button onClick={() => onChange(nextMonth(month))} className={btnClass} title="Next month">
+        <ChevronRight size={16} />
       </button>
     </div>
   );

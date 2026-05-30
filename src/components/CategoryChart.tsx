@@ -34,14 +34,14 @@ export default function CategoryChart({ transactions, currency }: Props) {
   if (data.length === 0) {
     return (
       <div className="card p-5 flex items-center justify-center h-48 text-gray-400 text-sm">
-        אין הוצאות להצגה
+        No expenses to display
       </div>
     );
   }
 
   return (
     <div className="card p-5">
-      <h3 className="text-sm font-semibold text-gray-600 mb-4">הוצאות לפי קטגוריה</h3>
+      <h3 className="text-sm font-semibold text-gray-600 mb-4">Expenses by Category</h3>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 60 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -58,8 +58,8 @@ export default function CategoryChart({ transactions, currency }: Props) {
             width={60}
           />
           <Tooltip
-            formatter={(value: number) => [`${value.toLocaleString()} ${currency}`, 'סכום']}
-            contentStyle={{ fontFamily: 'inherit', direction: 'rtl' }}
+            formatter={(value: number) => [`${value.toLocaleString()} ${currency}`, 'Amount']}
+            contentStyle={{ fontFamily: 'inherit' }}
           />
           <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
             {data.map((_, i) => (

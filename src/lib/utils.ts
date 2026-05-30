@@ -15,7 +15,7 @@ export function computeMetrics(transactions: Transaction[]): Metrics {
 export function formatCurrency(amount: number, currency: string): string {
   const symbol = CURRENCY_SYMBOLS[currency as Currency] ?? currency;
   const abs = Math.abs(amount);
-  const formatted = abs.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const formatted = abs.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   return `${symbol}${formatted}`;
 }
 
@@ -82,11 +82,8 @@ export function parseCSV(raw: string): Array<{ date: string; description: string
 
 export function monthLabel(month: string): string {
   const [y, m] = month.split('-').map(Number);
-  const hebrewMonths = [
-    'ינואר','פברואר','מרץ','אפריל','מאי','יוני',
-    'יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר',
-  ];
-  return `${hebrewMonths[m - 1]} ${y}`;
+  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${names[m - 1]} ${y}`;
 }
 
 export function currentMonth(): string {
@@ -108,11 +105,11 @@ export function nextMonth(month: string): string {
 
 export function exportToCSV(transactions: Transaction[], currency: string, month: string): void {
   const symbol = CURRENCY_SYMBOLS[currency as Currency] ?? currency;
-  const header = 'תאריך,תיאור,סכום,קטגוריה\n';
+  const header = 'Date,Description,Amount,Category\n';
   const rows = transactions.map(t =>
     `${formatDate(t.date)},"${t.description}",${t.amount > 0 ? '' : '-'}${symbol}${Math.abs(t.amount).toFixed(2)},${t.category}`
   ).join('\n');
-  const csv = '﻿' + header + rows; // BOM for Excel Hebrew support
+  const csv = header + rows;
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

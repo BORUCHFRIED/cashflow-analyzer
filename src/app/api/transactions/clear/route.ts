@@ -8,7 +8,7 @@ export async function DELETE(req: NextRequest) {
     const month = searchParams.get('month');
 
     if (!accountId || !month) {
-      return NextResponse.json({ error: 'נדרש accountId ו-month' }, { status: 400 });
+      return NextResponse.json({ error: 'accountId and month are required' }, { status: 400 });
     }
 
     const { count } = await prisma.transaction.deleteMany({
@@ -18,6 +18,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ deleted: count });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'שגיאה במחיקת נתוני החודש' }, { status: 500 });
+    return NextResponse.json({ error: 'Error deleting month data' }, { status: 500 });
   }
 }
